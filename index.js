@@ -340,6 +340,9 @@ function endGame(roomId) {
 }
 
 
-http.listen(3000, () => {
-    console.log("Matchmaking Server start");
+const PORT = process.env.PORT || 3000;
+
+http.listen(PORT, () => {
+    console.log("Matchmaking Server start on port", PORT);
 });
+
