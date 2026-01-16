@@ -228,10 +228,22 @@ io.on("connection", (socket) => {
 
     socket.on("disconnect", () => {
         for (const tId in lobbies) {
-            delete lobbies[tId].users[socket.id];
-            io.to(tId).emit("USER_LIST", lobbies[tId].users);
+            const lobby = lobbies[tId];
+
+            delete lobby.users[socket.id];
+            io.to(tId).emit("USER_LIST", lobby.users);
+
+            if (Object.keys(lobby.users).length === 0) {
+                if (lobby.lobbyInterval) {
+                    clearInterval(lobby.lobbyInterval);
+                }
+
+                delete lobbies[tId]; 
+                console.log("Lobby reset:", tId);
+            }
         }
     });
+
 
 
 });
@@ -329,15 +341,16 @@ function endGame(roomId) {
         scores: roomScores[roomId] || {}
     });
 
-    // optional: cleanup after delay
     setTimeout(() => {
         delete rooms[roomId];
         delete roomScores[roomId];
+        finishedRooms.delete(roomId);
     }, 5000);
 
-    finishedRooms.add(roomId);
-
+    const tournamentId = roomId.split("_ROOM_")[0];
+    delete lobbies[tournamentId];
 }
+
 
 
 const PORT = process.env.PORT || 3000;
