@@ -92,7 +92,7 @@ io.on("connection", (socket) => {
     });*/
 
     socket.on("JOIN_ROOM", ({ roomId }) => {
-        socket.currentRoom = roomId;
+
        // if (!users[socket.id]) return;
         let username = null;
 
@@ -227,31 +227,25 @@ io.on("connection", (socket) => {
     });*/
 
     socket.on("disconnect", () => {
-        console.log("Disconnected:", socket.id);
-
-        const roomId = socket.currentRoom;
-        if (roomId && rooms[roomId]) {
-
-            delete rooms[roomId].users[socket.id];
-            delete roomScores[roomId]?.[socket.id];
-            delete playerHealth[socket.id];
-
-            io.in(roomId).emit("ROOM_USERS", {
-                users: rooms[roomId].users
-            });
-
-            io.in(roomId).emit("SCORE_UPDATE", {
-                scores: roomScores[roomId],
-                users: rooms[roomId].users
-            });
-        }
-
-        // lobby cleanup (unchanged)
         for (const tId in lobbies) {
-            delete lobbies[tId].users[socket.id];
-            io.to(tId).emit("USER_LIST", lobbies[tId].users);
+            const lobby = lobbies[tId];
+
+            delete lobby.users[socket.id];
+            io.to(tId).emit("USER_LIST", lobby.users);
+
+            if (Object.keys(lobby.users).length === 0) {
+                if (lobby.lobbyInterval) {
+                    clearInterval(lobby.lobbyInterval);
+                }
+
+                delete lobbies[tId]; 
+                console.log("Lobby reset:", tId);
+            }
         }
     });
+
+
+
 });
 
 const LOBBY_TIME = 50; 
@@ -356,7 +350,6 @@ function endGame(roomId) {
     const tournamentId = roomId.split("_ROOM_")[0];
     delete lobbies[tournamentId];
 }
-
 
 
 
