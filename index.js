@@ -227,39 +227,23 @@ io.on("connection", (socket) => {
     });*/
 
     socket.on("disconnect", () => {
-
-        for (const roomId in rooms) {
-
-            if (!rooms[roomId]) continue;
-
-            if (roomScores[roomId]) delete roomScores[roomId][socket.id];
-            if (playerHealth[socket.id]) delete playerHealth[socket.id];
-
-            const hadUser = rooms[roomId].users[socket.id] !== undefined;
-            delete rooms[roomId].users[socket.id];
-
-            if (hadUser) {
-                io.to(roomId).emit("ROOM_USERS", {
-                    users: rooms[roomId].users
-                });
-
-                io.to(roomId).emit("SCORE_UPDATE", {
-                    scores: roomScores[roomId] || {},
-                    users: rooms[roomId].users
-                });
-            }
-        }
-
         for (const tId in lobbies) {
             const lobby = lobbies[tId];
+
             delete lobby.users[socket.id];
+            io.to(tId).emit("USER_LIST", lobby.users);
 
             if (Object.keys(lobby.users).length === 0) {
-                clearInterval(lobby.lobbyInterval);
-                delete lobbies[tId];
+                if (lobby.lobbyInterval) {
+                    clearInterval(lobby.lobbyInterval);
+                }
+
+                delete lobbies[tId]; 
+                console.log("Lobby reset:", tId);
             }
         }
     });
+
 
 
 });
