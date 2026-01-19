@@ -23,14 +23,6 @@ const finishedRooms = new Set();
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
 
-    /*socket.on("USERNAME", (data) => {
-        console.log("USERNAME received:", JSON.stringify(data));
-        users[socket.id] = data.username;
-        io.emit("USER_LIST", users);
-
-        startLobbyTimer();
-    });
-*/
     socket.on("USERNAME", ({ username, tournamentId }) => {
 
         if (!lobbies[tournamentId]) {
@@ -62,38 +54,10 @@ io.on("connection", (socket) => {
         socket.emit("USER_LIST", lobbies[tournamentId].users);
     });
 
-    /*socket.on("JOIN_ROOM", ({ roomId }) => {
-        socket.join(roomId);
-
-        if (!rooms[roomId]) {
-            rooms[roomId] = { users: {}, scores: {} };
-        }
-
-        rooms[roomId].users[socket.id] = users[socket.id];
-        rooms[roomId].scores[socket.id] = 0;
-
-        console.log(`${users[socket.id]} joined ${roomId}`);
-    });
-
-    socket.on("UserScore", ({ roomId, score }) => {
-        if (!rooms[roomId]) return;
-
-        rooms[roomId].scores[socket.id] = score;
-
-        const payload = {};
-        for (const id in rooms[roomId].scores) {
-            payload[id] = {
-                username: rooms[roomId].users[id],
-                score: rooms[roomId].scores[id]
-            };
-        }
-
-        io.to(roomId).emit("SCORE_UPDATE", payload);
-    });*/
+   
 
     socket.on("JOIN_ROOM", ({ roomId }) => {
 
-       // if (!users[socket.id]) return;
         let username = null;
 
         for (const tId in lobbies) {
@@ -102,7 +66,6 @@ io.on("connection", (socket) => {
                 break;
             }
         }
-
         if (!username) return;
 
 
@@ -113,7 +76,6 @@ io.on("connection", (socket) => {
             roomScores[roomId] = {};
         }
 
-        //rooms[roomId].users[socket.id] = users[socket.id];
         rooms[roomId].users[socket.id] = username;
         roomScores[roomId][socket.id] = 0;
         playerHealth[socket.id] = 100;
@@ -275,7 +237,7 @@ function startLobbyTimer(tournamentId) {
     }, 1000);
 }
 
-const PLAYERS_PER_MATCH = 2;
+const PLAYERS_PER_MATCH = 1;
 //const matches = {}; // roomId -> players
 
 function createMatches(tournamentId) {
