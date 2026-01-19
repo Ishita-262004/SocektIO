@@ -287,7 +287,7 @@ function startLobbyTimer(tournamentId) {
     }, 1000);
 }
 
-const PLAYERS_PER_MATCH = 1;
+const PLAYERS_PER_MATCH = 2;
 //const matches = {}; // roomId -> players
 
 function createMatches(tournamentId) {
