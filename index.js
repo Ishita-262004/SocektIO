@@ -234,7 +234,7 @@ io.on("connection", (socket) => {
                 delete rooms[roomId].users[socket.id];
                 delete roomScores[roomId][socket.id];
                 delete playerHealth[socket.id];
-
+                socket.leave(roomId);
                 io.to(roomId).emit("ROOM_USERS", {
                     users: rooms[roomId].users
                 });
