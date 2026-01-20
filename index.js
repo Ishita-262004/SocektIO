@@ -136,6 +136,23 @@ io.on("connection", (socket) => {
                 delete lobbies[tId]; 
                 console.log("Lobby reset:", tId);
             }
+
+            if (Object.keys(lobby.users).length === 0) {
+
+                if (lobby.lobbyInterval) {
+                    clearInterval(lobby.lobbyInterval);
+                }
+
+                if (tournamentTimers[tId]) {
+                    clearInterval(tournamentTimers[tId]);
+                    delete tournamentTimers[tId];
+                }
+
+                delete tournamentState[tId];
+                delete lobbies[tId];
+
+                console.log("Tournament reset:", tId);
+            }
         }
     });
 
@@ -229,12 +246,20 @@ function startGameTimer(roomId) {
 const TOURNAMENT_TIME = 600;
 const ROUND_TIME = 50;
 const tournamentTimers = {};
+const tournamentState = {};
 
 function startTournamentTimer(tournamentId) {
 
+    // RESET state if new
+    if (!tournamentState[tournamentId]) {
+        tournamentState[tournamentId] = {
+            startTime: Date.now()
+        };
+    }
+
     if (tournamentTimers[tournamentId]) return;
 
-    const startTime = Date.now();
+    const startTime = tournamentState[tournamentId].startTime;
     const endTime = startTime + TOURNAMENT_TIME * 1000;
 
     tournamentTimers[tournamentId] = setInterval(() => {
@@ -247,9 +272,7 @@ function startTournamentTimer(tournamentId) {
         const elapsed = Math.floor((now - startTime) / 1000);
 
         const round = Math.floor(elapsed / ROUND_TIME) + 1;
-
-        const roundTime =
-            Math.max(1, ROUND_TIME - (elapsed % ROUND_TIME));
+        const roundTime = Math.max(1, ROUND_TIME - (elapsed % ROUND_TIME));
 
         io.to(tournamentId).emit("TOURNAMENT_STATE", {
             tournamentTime,
@@ -260,11 +283,14 @@ function startTournamentTimer(tournamentId) {
         if (tournamentTime <= 0) {
             clearInterval(tournamentTimers[tournamentId]);
             delete tournamentTimers[tournamentId];
+            delete tournamentState[tournamentId];
+
             io.to(tournamentId).emit("TOURNAMENT_OVER");
         }
 
     }, 1000);
 }
+
 
 
 /*function endGame(roomId) {
