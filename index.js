@@ -84,80 +84,11 @@ io.on("connection", (socket) => {
             users: rooms[roomId].users
         });
 
-        io.to(roomId).emit("SCORE_UPDATE", {
-            scores: roomScores[roomId],
-            users: rooms[roomId].users
-        });
+     
     });
 
-    socket.on("PLAYER_MOVE", (pos) => {
-        for (const roomId of socket.rooms) {
-            if (finishedRooms.has(roomId)) return;
-        }
-        socket.rooms.forEach(roomId => {
-
-            if (roomId === socket.id) return;
-
-            socket.to(roomId).emit("PLAYER_MOVED", {
-                socketId: socket.id,
-                position: pos
-            });
-        });
-
-    });
-    socket.on("PLAYER_HIT", ({ targetId, damage }) => {
-
-        if (playerHealth[targetId] === undefined) return;
-        for (const roomId of socket.rooms) {
-            if (finishedRooms.has(roomId)) return;
-        }
-
-        playerHealth[targetId] -= damage;
-        if (playerHealth[targetId] < 0)
-            playerHealth[targetId] = 0;
-
-        console.log("Player", targetId, "health:", playerHealth[targetId]);
-
-        socket.rooms.forEach(roomId => {
-            if (roomId !== socket.id) {
-                io.to(roomId).emit("PLAYER_HEALTH_UPDATE", {
-                    socketId: targetId,
-                    health: playerHealth[targetId]
-                });
-            }
-        });
-
-        if (playerHealth[targetId] === 0) {
-
-            socket.rooms.forEach(roomId => {
-                if (roomId === socket.id) return;
-
-                if (roomScores[roomId] && roomScores[roomId][socket.id] !== undefined) {
-                    roomScores[roomId][socket.id] += 1;
-
-                    io.to(roomId).emit("SCORE_UPDATE", {
-                        scores: roomScores[roomId],
-                        users: rooms[roomId].users
-                    });
-                }
-            });
-
-            // Respawn
-            playerHealth[targetId] = 100;
-
-            socket.rooms.forEach(roomId => {
-                if (roomId !== socket.id) {
-                    io.to(roomId).emit("PLAYER_RESPAWN", {
-                        socketId: targetId
-                    });
-                }
-            });
-        }
-        socket.rooms.forEach(roomId => {
-            if (finishedRooms.has(roomId)) return;
-        });
-
-    });
+  
+    
 
     socket.on("LEAVE_GAME", ({ roomId }) => {
 
@@ -312,8 +243,6 @@ function endGame(roomId) {
     const tournamentId = roomId.split("_ROOM_")[0];
     delete lobbies[tournamentId];
 }
-
-
 
 const PORT = process.env.PORT || 3000;
 
