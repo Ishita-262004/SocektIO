@@ -226,35 +226,47 @@ function startGameTimer(roomId) {
         }, 1000)
     };
 }*/
-const TOURNAMENT_TIME = 600; // 10 minutes
+const TOURNAMENT_TIME = 600; // 10 min
+const ROUND_TIME = 120;     // 2 min
 const tournamentTimers = {};
+
 function startTournamentTimer(tournamentId) {
 
     if (tournamentTimers[tournamentId]) return;
 
-    const endTime = Date.now() + TOURNAMENT_TIME * 1000;
+    const startTime = Date.now();
+    const endTime = startTime + TOURNAMENT_TIME * 1000;
 
-    tournamentTimers[tournamentId] = {
-        endTime,
-        interval: setInterval(() => {
+    tournamentTimers[tournamentId] = setInterval(() => {
 
-            const remaining =
-                Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+        const now = Date.now();
+        const tournamentRemaining =
+            Math.max(0, Math.ceil((endTime - now) / 1000));
 
-            io.to(tournamentId).emit("TOURNAMENT_TIMER", {
-                time: remaining
-            });
+        const elapsed = Math.floor((now - startTime) / 1000);
 
-            if (remaining <= 0) {
-                clearInterval(tournamentTimers[tournamentId].interval);
-                delete tournamentTimers[tournamentId];
+        const currentRound =
+            Math.floor(elapsed / ROUND_TIME) + 1;
 
-                io.to(tournamentId).emit("TOURNAMENT_OVER");
-            }
+        const roundRemaining =
+            Math.max(0, ROUND_TIME - (elapsed % ROUND_TIME));
 
-        }, 1000)
-    };
+        io.to(tournamentId).emit("TOURNAMENT_STATE", {
+            tournamentTime: tournamentRemaining,
+            round: currentRound,
+            roundTime: roundRemaining
+        });
+
+        if (tournamentRemaining <= 0) {
+            clearInterval(tournamentTimers[tournamentId]);
+            delete tournamentTimers[tournamentId];
+
+            io.to(tournamentId).emit("TOURNAMENT_OVER");
+        }
+
+    }, 1000);
 }
+
 
 /*function endGame(roomId) {
 
