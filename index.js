@@ -226,8 +226,8 @@ function startGameTimer(roomId) {
         }, 1000)
     };
 }*/
-const TOURNAMENT_TIME = 600; // 10 min
-const ROUND_TIME = 120;     // 2 min
+const TOURNAMENT_TIME = 600;
+const ROUND_TIME = 50;
 const tournamentTimers = {};
 
 function startTournamentTimer(tournamentId) {
@@ -240,27 +240,26 @@ function startTournamentTimer(tournamentId) {
     tournamentTimers[tournamentId] = setInterval(() => {
 
         const now = Date.now();
-        const tournamentRemaining =
+
+        const tournamentTime =
             Math.max(0, Math.ceil((endTime - now) / 1000));
 
         const elapsed = Math.floor((now - startTime) / 1000);
 
-        const currentRound =
-            Math.floor(elapsed / ROUND_TIME) + 1;
+        const round = Math.floor(elapsed / ROUND_TIME) + 1;
 
-        const roundRemaining =
-            Math.max(0, ROUND_TIME - (elapsed % ROUND_TIME));
+        const roundTime =
+            Math.max(1, ROUND_TIME - (elapsed % ROUND_TIME));
 
         io.to(tournamentId).emit("TOURNAMENT_STATE", {
-            tournamentTime: tournamentRemaining,
-            round: currentRound,
-            roundTime: roundRemaining
+            tournamentTime,
+            round,
+            roundTime
         });
 
-        if (tournamentRemaining <= 0) {
+        if (tournamentTime <= 0) {
             clearInterval(tournamentTimers[tournamentId]);
             delete tournamentTimers[tournamentId];
-
             io.to(tournamentId).emit("TOURNAMENT_OVER");
         }
 
