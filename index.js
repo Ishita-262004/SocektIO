@@ -17,6 +17,8 @@ const lobbies = {
     //   lobbyInterval
     // }
 };
+
+
 const finishedRooms = new Set();
 
 
@@ -168,7 +170,7 @@ function startLobbyTimer(tournamentId) {
     }, 1000);
 }
 
-const PLAYERS_PER_MATCH = 2;
+const PLAYERS_PER_MATCH = 1;
 //const matches = {}; // roomId -> players
 
 function createMatches(tournamentId) {
@@ -177,7 +179,7 @@ function createMatches(tournamentId) {
     if (!lobby) return;
 
     lobby.gameStarted = true;
-
+    startTournamentTimer(tournamentId);
     const lobbyUsers = Object.keys(lobbies[tournamentId].users);
     const sockets = lobbyUsers.map(id => io.sockets.sockets.get(id));
 
@@ -195,7 +197,7 @@ function createMatches(tournamentId) {
             players: group.map(s => lobbies[tournamentId].users[s.id])
         });
 
-        startGameTimer(roomId);
+      //  startGameTimer(roomId);
 
     }
 }
@@ -219,6 +221,35 @@ function startGameTimer(roomId) {
 
             if (gameTimers[roomId].time <= 0) {
                 endGame(roomId);
+            }
+
+        }, 1000)
+    };
+}
+const TOURNAMENT_TIME = 600; // 10 minutes
+const tournamentTimers = {};
+function startTournamentTimer(tournamentId) {
+
+    if (tournamentTimers[tournamentId]) return;
+
+    const endTime = Date.now() + TOURNAMENT_TIME * 1000;
+
+    tournamentTimers[tournamentId] = {
+        endTime,
+        interval: setInterval(() => {
+
+            const remaining =
+                Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+
+            io.to(tournamentId).emit("TOURNAMENT_TIMER", {
+                time: remaining
+            });
+
+            if (remaining <= 0) {
+                clearInterval(tournamentTimers[tournamentId].interval);
+                delete tournamentTimers[tournamentId];
+
+                io.to(tournamentId).emit("TOURNAMENT_OVER");
             }
 
         }, 1000)
