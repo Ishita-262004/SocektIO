@@ -7,8 +7,8 @@ const io = require("socket.io")(http, {
 
 //const users = {}; // socket.id -> username
 const rooms = {};
-const playerHealth = {}; // socket.id -> health
-const roomScores = {}; // roomId -> { socketId: score }
+//const playerHealth = {}; // socket.id -> health
+//const roomScores = {}; // roomId -> { socketId: score }
 
 const lobbies = {
     // tournamentId : {
@@ -19,7 +19,7 @@ const lobbies = {
 };
 
 
-const finishedRooms = new Set();
+//const finishedRooms = new Set();
 
 
 io.on("connection", (socket) => {
@@ -75,12 +75,12 @@ io.on("connection", (socket) => {
 
         if (!rooms[roomId]) {
             rooms[roomId] = { users: {} };
-            roomScores[roomId] = {};
+            //roomScores[roomId] = {};
         }
 
         rooms[roomId].users[socket.id] = username;
-        roomScores[roomId][socket.id] = 0;
-        playerHealth[socket.id] = 100;
+       // roomScores[roomId][socket.id] = 0;
+       // playerHealth[socket.id] = 100;
 
         io.to(roomId).emit("ROOM_USERS", {
             users: rooms[roomId].users
@@ -99,22 +99,22 @@ io.on("connection", (socket) => {
         // remove from room users
         if (rooms[roomId]) {
             delete rooms[roomId].users[socket.id];
-            delete roomScores[roomId][socket.id];
+           // delete roomScores[roomId][socket.id];
         }
 
-        delete playerHealth[socket.id];
+       // delete playerHealth[socket.id];
 
         socket.leave(roomId);
 
         // notify remaining players
         io.to(roomId).emit("ROOM_USERS", {
-            users: rooms[roomId]?.users || {}
+            users: rooms[roomId]?.users 
         });
 
-        io.to(roomId).emit("SCORE_UPDATE", {
-            scores: roomScores[roomId] || {},
+       /* io.to(roomId).emit("SCORE_UPDATE", {
+           // scores: roomScores[roomId] || {},
             users: rooms[roomId]?.users || {}
-        });
+        });*/
     });
 
    /* socket.on("GET_USERS", () => {
@@ -156,8 +156,6 @@ io.on("connection", (socket) => {
         }
     });
 
-
-
 });
 
 const LOBBY_TIME = 50; 
@@ -188,7 +186,6 @@ function startLobbyTimer(tournamentId) {
 }
 
 const PLAYERS_PER_MATCH = 1;
-//const matches = {}; // roomId -> players
 
 function createMatches(tournamentId) {
 
@@ -214,35 +211,9 @@ function createMatches(tournamentId) {
             players: group.map(s => lobbies[tournamentId].users[s.id])
         });
         startTournamentTimer(tournamentId);
-      //  startGameTimer(roomId);
-
     }
 }
 
-/*const GAME_TIME = 300; // 5 minutes in seconds
-const gameTimers = {}; // roomId -> { time, interval }
-
-function startGameTimer(roomId) {
-
-    if (gameTimers[roomId]) return;
-
-    gameTimers[roomId] = {
-        time: GAME_TIME,
-        interval: setInterval(() => {
-
-            gameTimers[roomId].time--;
-
-            io.to(roomId).emit("GAME_TIMER", {
-                time: gameTimers[roomId].time
-            });
-
-            if (gameTimers[roomId].time <= 0) {
-                endGame(roomId);
-            }
-
-        }, 1000)
-    };
-}*/
 const TOURNAMENT_TIME = 600;
 const ROUND_TIME = 50;
 const tournamentTimers = {};
