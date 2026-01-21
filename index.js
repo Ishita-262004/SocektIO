@@ -91,13 +91,11 @@ io.on("connection", (socket) => {
     });
 
     socket.on("ADD_TOURNAMENT_COINS", ({ tournamentId, coins }) => {
-        if (!tournamentCoins[tournamentId]) return;
-        if (tournamentCoins[tournamentId][socket.id] === undefined) return;
+        const username = lobbies[tournamentId]?.users[socket.id];
+        if (!username) return;
 
-        tournamentCoins[tournamentId][socket.id] += coins;
+        tournamentCoins[tournamentId][username] += coins;
     });
-
-    
 
     socket.on("LEAVE_GAME", ({ roomId }) => {
 
@@ -264,14 +262,12 @@ function startTournamentTimer(tournamentId) {
 
             const result = {};
 
-            for (const sid in tournamentCoins[tournamentId]) {
-                const username = lobbies[tournamentId]?.users[sid];
-                if (username) {
-                    result[username] = tournamentCoins[tournamentId][sid];
-                }
+            for (const username in tournamentCoins[tournamentId]) {
+                result[username] = tournamentCoins[tournamentId][username];
             }
 
             io.to(tournamentId).emit("TOURNAMENT_RESULT", result);
+
 
             delete tournamentCoins[tournamentId];
         }
