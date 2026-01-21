@@ -92,7 +92,7 @@ io.on("connection", (socket) => {
 
     socket.on("ADD_TOURNAMENT_COINS", ({ tournamentId, coins }) => {
         if (!tournamentCoins[tournamentId]) return;
-        if (!tournamentCoins[tournamentId][socket.id]) return;
+        if (tournamentCoins[tournamentId][socket.id] === undefined) return;
 
         tournamentCoins[tournamentId][socket.id] += coins;
     });
@@ -258,6 +258,9 @@ function startTournamentTimer(tournamentId) {
         }
 
         if (tournamentTime <= 0) {
+
+            clearInterval(tournamentTimers[tournamentId]);
+            delete tournamentTimers[tournamentId];
 
             const result = {};
 
