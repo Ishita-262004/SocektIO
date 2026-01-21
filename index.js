@@ -6,7 +6,6 @@ const io = require("socket.io")(http, {
 });
 
 const rooms = {};
-const tournamentCoins = {};
 
 
 const lobbies = {
@@ -37,12 +36,6 @@ io.on("connection", (socket) => {
             socket.emit("LOBBY_CLOSED");
             return;
         }
-
-        if (!tournamentCoins[tournamentId]) {
-            tournamentCoins[tournamentId] = {};
-        }
-
-        tournamentCoins[tournamentId][socket.id] = 0;
 
         lobbies[tournamentId].users[socket.id] = username;
 
@@ -90,16 +83,6 @@ io.on("connection", (socket) => {
      
     });
 
-    socket.on("ADD_TOURNAMENT_COINS", ({ tournamentId, coins }) => {
-        if (!tournamentCoins[tournamentId]) return;
-
-        if (tournamentCoins[tournamentId][socket.id] === undefined) {
-            tournamentCoins[tournamentId][socket.id] = 0;
-        }
-
-        tournamentCoins[tournamentId][socket.id] += coins;
-
-    });
 
     socket.on("LEAVE_GAME", ({ roomId }) => {
 
@@ -258,25 +241,6 @@ function startTournamentTimer(tournamentId) {
             io.to(tournamentId).emit("ROUND_ENDED", { round: lastRound });
             lastRound = round;
         }
-
-        if (tournamentTime <= 0) {
-
-            clearInterval(tournamentTimers[tournamentId]);
-            delete tournamentTimers[tournamentId];
-
-            const result = {};
-
-            for (const socketId in tournamentCoins[tournamentId]) {
-                const username = lobbies[tournamentId]?.users[socketId] || "Unknown";
-                result[username] = tournamentCoins[tournamentId][socketId];
-            }
-
-            io.to(tournamentId).emit("TOURNAMENT_RESULT", result);
-
-
-            delete tournamentCoins[tournamentId];
-        }
-
 
     }, 1000);
 }
