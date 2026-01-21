@@ -213,7 +213,7 @@ function createMatches(tournamentId) {
     }
 }
 
-const TOURNAMENT_TIME = 600;
+const TOURNAMENT_TIME = 120;
 const ROUND_TIME = 50;
 const tournamentTimers = {};
 const tournamentState = {};
