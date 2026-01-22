@@ -258,12 +258,16 @@ function startTournamentTimer(tournamentId) {
             delete tournamentTimers[tournamentId];
 
             // Prepare final results
+            // Prepare final results
             const finalScores = tournamentState[tournamentId]?.scores || {};
+            const lobbyUsers = lobbies[tournamentId].users || {};
+
             const results = Object.entries(finalScores).map(([socketId, coins]) => ({
                 userId: socketId,
-                username: Object.values(lobbies[tournamentId].users).find(u => u === lobbies[tournamentId].users[socketId]) || "Unknown",
+                username: lobbyUsers[socketId] || "Unknown",
                 coins
             }));
+
 
             // Find winner
             const winner = results.reduce((prev, curr) => (curr.coins > prev.coins ? curr : prev), { coins: -1 });
