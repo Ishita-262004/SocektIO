@@ -255,8 +255,9 @@ function startTournamentTimer(tournamentId) {
         }
         io.to(tournamentId).emit(
             "TOURNAMENT_RESULT",
-            tournamentResults[tournamentId]
+            tournamentResults[tournamentId] || {}
         );
+
 
     }, 1000);
 }
