@@ -256,28 +256,11 @@ function startTournamentTimer(tournamentId) {
         }
 
         if (round !== lastRound) {
-
-            const roundCoins = lastRound * 1000; // example logic
-
-            const lobby = lobbies[tournamentId];
-            if (lobby) {
-                for (const socketId in lobby.users) {
-
-                    if (!tournamentCoins[tournamentId][socketId])
-                        tournamentCoins[tournamentId][socketId] = 0;
-
-                    tournamentCoins[tournamentId][socketId] += roundCoins;
-                }
-            }
-
             io.to(tournamentId).emit("ROUND_ENDED", {
-                round: lastRound,
-                coinsAdded: roundCoins
+                round: lastRound
             });
-
             lastRound = round;
         }
-
 
     }, 1000);
 }
