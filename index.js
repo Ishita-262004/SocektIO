@@ -16,7 +16,6 @@ const lobbies = {
     // }
 };
 const tournamentResults = {};
-const tournamentExpectedPlayers = {};
 
 
 io.on("connection", (socket) => {
@@ -95,18 +94,7 @@ io.on("connection", (socket) => {
         if (!username) return;
 
         tournamentResults[tournamentId][username] = coins;
-
-        const receivedCount = Object.keys(tournamentResults[tournamentId]).length;
-        const expectedCount = tournamentExpectedPlayers[tournamentId];
-
-        if (receivedCount === expectedCount) {
-            io.to(tournamentId).emit(
-                "TOURNAMENT_RESULT",
-                tournamentResults[tournamentId]
-            );
-        }
     });
-
 
 
 
@@ -195,7 +183,7 @@ function startLobbyTimer(tournamentId) {
     }, 1000);
 }
 
-const PLAYERS_PER_MATCH = 2;
+const PLAYERS_PER_MATCH = 1;
 
 function createMatches(tournamentId) {
 
@@ -238,10 +226,6 @@ function startTournamentTimer(tournamentId) {
             startTime: Date.now()
         };
     }
-    if (!tournamentExpectedPlayers[tournamentId]) {
-        tournamentExpectedPlayers[tournamentId] =
-            Object.keys(lobbies[tournamentId].users).length;
-    }
 
    
     if (tournamentTimers[tournamentId]) return;
@@ -271,6 +255,13 @@ function startTournamentTimer(tournamentId) {
             io.to(tournamentId).emit("ROUND_ENDED", { round: lastRound });
             lastRound = round;
         }
+        if (tournamentTime <= 0) {
+            io.to(tournamentId).emit(
+                "TOURNAMENT_RESULT",
+                tournamentResults[tournamentId] || {}
+            );
+        }
+
 
 
     }, 1000);
