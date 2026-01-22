@@ -59,8 +59,9 @@ io.on("connection", (socket) => {
         const lobby = lobbies[tournamentId];
         if (!lobby) return;
 
-        if (!lobby.coins[socket.id])
+        if (lobby.coins[socket.id] === undefined)
             lobby.coins[socket.id] = 0;
+
 
         lobby.coins[socket.id] += coins;
     });
