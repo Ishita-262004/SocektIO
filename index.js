@@ -21,17 +21,18 @@ const lobbies = {
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
 
-    socket.on("USERNAME", ({ username, tournamentId }) => {
-
+    socket.on("USERNAME", ({ username, tournamentId, playerId }) => {
         if (!lobbies[tournamentId]) {
             lobbies[tournamentId] = {
                 users: {},
                 coins: {},
+                sockets: {},
                 lobbyTime: LOBBY_TIME,
                 lobbyInterval: null,
                 gameStarted: false
             };
         }
+
         const lobby = lobbies[tournamentId];
 
         if (lobby.gameStarted) {
@@ -39,15 +40,18 @@ io.on("connection", (socket) => {
             return;
         }
 
-        lobbies[tournamentId].users[socket.id] = username;
-        lobbies[tournamentId].coins[socket.id] = 0;
+        // HERE IS THE FIX
+        lobby.users[playerId] = username;  // store username by playerId
+        lobby.coins[playerId] = lobby.coins[playerId] || 0;
+        lobby.sockets[socket.id] = playerId; // map socket.id to playerId
 
         socket.join(tournamentId);
 
-        io.to(tournamentId).emit("USER_LIST", lobbies[tournamentId].users);
-       
+        io.to(tournamentId).emit("USER_LIST", lobby.users);
+
         startLobbyTimer(tournamentId);
     });
+
 
     socket.on("GET_LOBBY_USERS", ({ tournamentId }) => {
         if (!lobbies[tournamentId]) return;
@@ -59,12 +63,14 @@ io.on("connection", (socket) => {
         const lobby = lobbies[tournamentId];
         if (!lobby) return;
 
-        if (lobby.coins[socket.id] === undefined)
-            lobby.coins[socket.id] = 0;
+        const playerId = lobby.sockets[socket.id];
+        if (!playerId) return;
 
+        lobby.coins[playerId] += coins;
 
-        lobby.coins[socket.id] += coins;
+        console.log(`[TOURNAMENT] ${playerId} new coins: ${lobby.coins[playerId]}`);
     });
+
 
 
     socket.on("JOIN_ROOM", ({ roomId }) => {
@@ -260,13 +266,14 @@ function startTournamentTimer(tournamentId) {
 
             const lobby = lobbies[tournamentId];
 
-            const result = Object.keys(lobby.users).map(id => ({
-                username: lobby.users[id],
-                coins: lobby.coins[id] || 0
+            const result = Object.keys(lobby.users).map(playerId => ({
+                username: lobby.users[playerId],
+                coins: lobby.coins[playerId] || 0
             }));
 
             io.to(tournamentId).emit("TOURNAMENT_RESULT", { result });
         }
+
 
     }, 1000);
 }
