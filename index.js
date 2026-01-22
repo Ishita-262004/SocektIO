@@ -17,22 +17,19 @@ const lobbies = {
 };
 
 
-
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
 
-    socket.on("USERNAME", ({ username, tournamentId, playerId }) => {
+    socket.on("USERNAME", ({ username, tournamentId }) => {
+
         if (!lobbies[tournamentId]) {
             lobbies[tournamentId] = {
                 users: {},
-                coins: {},
-                sockets: {},
                 lobbyTime: LOBBY_TIME,
                 lobbyInterval: null,
                 gameStarted: false
             };
         }
-
         const lobby = lobbies[tournamentId];
 
         if (lobby.gameStarted) {
@@ -40,18 +37,14 @@ io.on("connection", (socket) => {
             return;
         }
 
-        // HERE IS THE FIX
-        lobby.users[playerId] = username;  // store username by playerId
-        lobby.coins[playerId] = lobby.coins[playerId] || 0;
-        lobby.sockets[socket.id] = playerId; // map socket.id to playerId
+        lobbies[tournamentId].users[socket.id] = username;
 
         socket.join(tournamentId);
 
-        io.to(tournamentId).emit("USER_LIST", lobby.users);
-
+        io.to(tournamentId).emit("USER_LIST", lobbies[tournamentId].users);
+       
         startLobbyTimer(tournamentId);
     });
-
 
     socket.on("GET_LOBBY_USERS", ({ tournamentId }) => {
         if (!lobbies[tournamentId]) return;
@@ -59,19 +52,18 @@ io.on("connection", (socket) => {
         socket.emit("USER_LIST", lobbies[tournamentId].users);
     });
 
-    socket.on("ADD_TOURNAMENT_COINS", ({ tournamentId, coins }) => {
-        const lobby = lobbies[tournamentId];
-        if (!lobby) return;
+   
+    socket.on("ROUND_RESULT", ({ tournamentId, coinsEarned }) => {
+        if (!tournamentState[tournamentId]) return;
 
-        const playerId = lobby.sockets[socket.id];
-        if (!playerId) return;
+        if (!tournamentState[tournamentId].scores[socket.id]) {
+            tournamentState[tournamentId].scores[socket.id] = 0;
+        }
 
-        lobby.coins[playerId] += coins;
+        tournamentState[tournamentId].scores[socket.id] += coinsEarned;
 
-        console.log(`[TOURNAMENT] ${playerId} new coins: ${lobby.coins[playerId]}`);
+        io.to(tournamentId).emit("SCORES_UPDATE", tournamentState[tournamentId].scores);
     });
-
-
 
     socket.on("JOIN_ROOM", ({ roomId }) => {
 
@@ -263,15 +255,35 @@ function startTournamentTimer(tournamentId) {
 
         if (tournamentTime <= 0) {
             clearInterval(tournamentTimers[tournamentId]);
+            delete tournamentTimers[tournamentId];
 
-            const lobby = lobbies[tournamentId];
-
-            const result = Object.keys(lobby.users).map(playerId => ({
-                username: lobby.users[playerId],
-                coins: lobby.coins[playerId] || 0
+            // Prepare final results
+            const finalScores = tournamentState[tournamentId]?.scores || {};
+            const results = Object.entries(finalScores).map(([socketId, coins]) => ({
+                userId: socketId,
+                username: Object.values(lobbies[tournamentId].users).find(u => u === lobbies[tournamentId].users[socketId]) || "Unknown",
+                coins
             }));
 
-            io.to(tournamentId).emit("TOURNAMENT_RESULT", { result });
+            // Find winner
+            const winner = results.reduce((prev, curr) => (curr.coins > prev.coins ? curr : prev), { coins: -1 });
+
+            io.to(tournamentId).emit("TOURNAMENT_OVER", {
+                results,
+                winnerId: winner.userId
+            });
+
+            delete tournamentState[tournamentId];
+
+            io.to(tournamentId).emit("TOURNAMENT_ENDED");
+            console.log("Tournament ended:", tournamentId);
+
+            // Reset lobby
+            if (lobbies[tournamentId]) {
+                lobbies[tournamentId].gameStarted = false;
+                lobbies[tournamentId].lobbyTime = LOBBY_TIME;
+                lobbies[tournamentId].lobbyInterval = null;
+            }
         }
 
 
