@@ -156,7 +156,7 @@ io.on("connection", (socket) => {
 
 });
 
-const LOBBY_TIME = 50; 
+const LOBBY_TIME = 40; 
 let lobbyTime = LOBBY_TIME;
 let lobbyInterval = null;
 
@@ -183,7 +183,7 @@ function startLobbyTimer(tournamentId) {
     }, 1000);
 }
 
-const PLAYERS_PER_MATCH = 1;
+const PLAYERS_PER_MATCH = 2;
 
 function createMatches(tournamentId) {
 
@@ -212,8 +212,8 @@ function createMatches(tournamentId) {
     }
 }
 
-const TOURNAMENT_TIME = 120;
-const ROUND_TIME = 50;
+const TOURNAMENT_TIME = 100;
+const ROUND_TIME = 40;
 const tournamentTimers = {};
 const tournamentState = {};
 
