@@ -69,6 +69,7 @@ io.on("connection", (socket) => {
 
 
         socket.join(roomId);
+        socket.join(tournamentId);
 
         if (!rooms[roomId]) {
             rooms[roomId] = { users: {} };
