@@ -94,6 +94,11 @@ io.on("connection", (socket) => {
         if (!username) return;
 
         tournamentResults[tournamentId][username] = coins;
+
+        io.to(tournamentId).emit(
+            "TOURNAMENT_RESULT",
+            tournamentResults[tournamentId]
+        );
     });
 
 
