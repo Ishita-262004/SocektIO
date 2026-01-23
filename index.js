@@ -97,6 +97,13 @@ io.on("connection", (socket) => {
         tournamentResults[tournamentId][username] = coins;
     });
 
+    setTimeout(() => {
+        io.to(tournamentId).emit(
+            "TOURNAMENT_RESULT",
+            tournamentResults[tournamentId]
+        );
+    }, 1000); // wait for all players
+
     socket.on("JOIN_TOURNAMENT_ROOM", ({ tournamentId }) => {
         socket.join(tournamentId);
         console.log("Socket joined tournament room:", tournamentId);
@@ -263,11 +270,9 @@ function startTournamentTimer(tournamentId) {
         if (tournamentTime <= 0 && !tournamentFinished[tournamentId]) {
             tournamentFinished[tournamentId] = true;
 
-            io.to(tournamentId).emit(
-                "TOURNAMENT_RESULT",
-                tournamentResults[tournamentId] || {}
-            );
+            io.to(tournamentId).emit("REQUEST_TOURNAMENT_RESULT");
         }
+
 
 
     }, 1000);
