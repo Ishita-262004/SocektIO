@@ -255,18 +255,25 @@ function startTournamentTimer(tournamentId) {
             io.to(tournamentId).emit("ROUND_ENDED", { round: lastRound });
             lastRound = round;
         }
-        for (const roomId in rooms) {
-            if (roomId.startsWith(tournamentId)) {
-                io.to(roomId).emit(
-                    "TOURNAMENT_RESULT",
-                    tournamentResults[tournamentId] || {}
-                );
-            }
+        if (tournamentTime <= 0) {
+            clearInterval(tournamentTimers[tournamentId]);
+            sendTournamentResult(tournamentId);
         }
+
 
     }, 1000);
 }
 
+function sendTournamentResult(tournamentId) {
+    for (const roomId in rooms) {
+        if (roomId.startsWith(tournamentId)) {
+            io.to(roomId).emit(
+                "TOURNAMENT_RESULT",
+                tournamentResults[tournamentId] || {}
+            );
+        }
+    }
+}
 
 const PORT = process.env.PORT || 3000;
 
