@@ -95,7 +95,10 @@ io.on("connection", (socket) => {
 
         tournamentResults[tournamentId][username] = coins;
 
-        io.emit("TOURNAMENT_RESULT", tournamentResults[tournamentId]);
+        io.to(tournamentId).emit(
+            "TOURNAMENT_RESULT",
+            tournamentResults[tournamentId]
+        );
 
     });
 
@@ -258,14 +261,6 @@ function startTournamentTimer(tournamentId) {
             io.to(tournamentId).emit("ROUND_ENDED", { round: lastRound });
             lastRound = round;
         }
-        if (tournamentTime <= 0) {
-            io.to(tournamentId).emit(
-                "TOURNAMENT_RESULT",
-                tournamentResults[tournamentId] || {}
-            );
-        }
-
-
 
     }, 1000);
 }
