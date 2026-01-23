@@ -16,8 +16,6 @@ const lobbies = {
     // }
 };
 const tournamentResults = {};
-const tournamentExpectedPlayers = {};
-
 
 
 io.on("connection", (socket) => {
@@ -101,7 +99,7 @@ io.on("connection", (socket) => {
             Object.keys(tournamentResults[tournamentId]).length;
 
         const expectedCount =
-            tournamentExpectedPlayers[tournamentId] || 0;
+            Object.keys(lobbies[tournamentId].users).length;
 
         console.log(
             `RESULT COUNT ${receivedCount}/${expectedCount}`
@@ -111,9 +109,6 @@ io.on("connection", (socket) => {
             sendTournamentResult(tournamentId);
         }
     });
-
-
-
 
     socket.on("LEAVE_GAME", ({ roomId }) => {
 
