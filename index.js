@@ -95,15 +95,17 @@ io.on("connection", (socket) => {
         if (!username) return;
 
         tournamentResults[tournamentId][username] = coins;
+
+        setTimeout(() => {
+            io.to(tournamentId).emit(
+                "TOURNAMENT_RESULT",
+                tournamentResults[tournamentId]
+            );
+        }, 1000); // wait for all players
+
     });
 
-    setTimeout(() => {
-        io.to(tournamentId).emit(
-            "TOURNAMENT_RESULT",
-            tournamentResults[tournamentId]
-        );
-    }, 1000); // wait for all players
-
+   
     socket.on("JOIN_TOURNAMENT_ROOM", ({ tournamentId }) => {
         socket.join(tournamentId);
         console.log("Socket joined tournament room:", tournamentId);
