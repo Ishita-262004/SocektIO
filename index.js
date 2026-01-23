@@ -110,6 +110,17 @@ io.on("connection", (socket) => {
         }
     });
 
+    socket.on("TOURNAMENT_COIN_UPDATE", ({ username, coins }) => {
+        for (const roomId in rooms) {
+            if (rooms[roomId].users[socket.id]) {
+                io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", {
+                    username,
+                    coins
+                });
+            }
+        }
+    });
+
     socket.on("LEAVE_GAME", ({ roomId }) => {
 
         console.log("Player left game:", socket.id, "room:", roomId);
@@ -195,7 +206,7 @@ function startLobbyTimer(tournamentId) {
     }, 1000);
 }
 
-const PLAYERS_PER_MATCH = 2;
+const PLAYERS_PER_MATCH = 1;
 
 function createMatches(tournamentId) {
 
