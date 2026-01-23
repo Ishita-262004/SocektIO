@@ -16,6 +16,7 @@ const lobbies = {
     // }
 };
 const tournamentResults = {};
+const tournamentFinished = {};
 
 
 io.on("connection", (socket) => {
@@ -58,12 +59,10 @@ io.on("connection", (socket) => {
     socket.on("JOIN_ROOM", ({ roomId }) => {
 
         let username = null;
-        let tournamentId = null;
 
         for (const tId in lobbies) {
             if (lobbies[tId].users[socket.id]) {
                 username = lobbies[tId].users[socket.id];
-                tournamentId = tId;
                 break;
             }
         }
@@ -71,7 +70,6 @@ io.on("connection", (socket) => {
 
 
         socket.join(roomId);
-        socket.join(tournamentId);
 
         if (!rooms[roomId]) {
             rooms[roomId] = { users: {} };
@@ -97,14 +95,12 @@ io.on("connection", (socket) => {
         if (!username) return;
 
         tournamentResults[tournamentId][username] = coins;
-
-        socket.emit(
-            "TOURNAMENT_RESULT",
-            tournamentResults[tournamentId]
-        );
-
     });
 
+    socket.on("JOIN_TOURNAMENT_ROOM", ({ tournamentId }) => {
+        socket.join(tournamentId);
+        console.log("Socket joined tournament room:", tournamentId);
+    });
 
 
     socket.on("LEAVE_GAME", ({ roomId }) => {
@@ -264,13 +260,14 @@ function startTournamentTimer(tournamentId) {
             io.to(tournamentId).emit("ROUND_ENDED", { round: lastRound });
             lastRound = round;
         }
-        /*if (tournamentTime <= 0) {
+        if (tournamentTime <= 0 && !tournamentFinished[tournamentId]) {
+            tournamentFinished[tournamentId] = true;
+
             io.to(tournamentId).emit(
                 "TOURNAMENT_RESULT",
                 tournamentResults[tournamentId] || {}
             );
-        }*/
-
+        }
 
 
     }, 1000);
