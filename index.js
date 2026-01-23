@@ -98,10 +98,11 @@ io.on("connection", (socket) => {
 
         tournamentResults[tournamentId][username] = coins;
 
-        io.to(tournamentId).emit(
+        socket.emit(
             "TOURNAMENT_RESULT",
             tournamentResults[tournamentId]
         );
+
     });
 
 
