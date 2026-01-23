@@ -58,10 +58,12 @@ io.on("connection", (socket) => {
     socket.on("JOIN_ROOM", ({ roomId }) => {
 
         let username = null;
+        let tournamentId = null;
 
         for (const tId in lobbies) {
             if (lobbies[tId].users[socket.id]) {
                 username = lobbies[tId].users[socket.id];
+                tournamentId = tId;
                 break;
             }
         }
