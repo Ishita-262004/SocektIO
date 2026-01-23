@@ -16,6 +16,8 @@ const lobbies = {
     // }
 };
 const tournamentResults = {};
+const tournamentExpectedPlayers = {};
+
 
 
 io.on("connection", (socket) => {
@@ -94,7 +96,22 @@ io.on("connection", (socket) => {
         if (!username) return;
 
         tournamentResults[tournamentId][username] = coins;
+
+        const receivedCount =
+            Object.keys(tournamentResults[tournamentId]).length;
+
+        const expectedCount =
+            tournamentExpectedPlayers[tournamentId] || 0;
+
+        console.log(
+            `RESULT COUNT ${receivedCount}/${expectedCount}`
+        );
+
+        if (receivedCount === expectedCount) {
+            sendTournamentResult(tournamentId);
+        }
     });
+
 
 
 
@@ -257,9 +274,8 @@ function startTournamentTimer(tournamentId) {
         }
         if (tournamentTime <= 0) {
             clearInterval(tournamentTimers[tournamentId]);
-            sendTournamentResult(tournamentId);
+            console.log("Tournament ended. Waiting for player results...");
         }
-
 
     }, 1000);
 }
