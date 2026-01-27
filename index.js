@@ -33,21 +33,12 @@ io.on("connection", (socket) => {
         }
         const lobby = lobbies[tournamentId];
         if (lobby.users[userId]) {
-            lobby.users[userId].socketId = socket.id;
-            socket.join(tournamentId);
+        lobby.users[userId].socketId = socket.id;
+        socket.join(tournamentId);
 
-            sendFullState(socket, tournamentId, userId);
-            return;
-        }
-
-        lobby.users[userId] = {
-            userId,
-            socketId: socket.id,
-            username,
-            avatar,
-            coins: 0,
-            roomId: null
-        };
+        sendFullState(socket, tournamentId, userId);
+        return;
+    }
         if (lobby.gameStarted) {
             socket.emit("LOBBY_CLOSED");
             return;
@@ -144,7 +135,7 @@ io.on("connection", (socket) => {
     });
 
 
-    /*socket.on("TOURNAMENT_COIN_UPDATE", ({ username, coins }) => {
+    socket.on("TOURNAMENT_COIN_UPDATE", ({ username, coins }) => {
         for (const roomId in rooms) {
             if (rooms[roomId].users[socket.id]) {
                 io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", {
@@ -153,15 +144,7 @@ io.on("connection", (socket) => {
                 });
             }
         }
-    });*/
-    socket.on("TOURNAMENT_COIN_UPDATE", ({ userId, coins }) => {
-        for (const tId in lobbies) {
-            if (lobbies[tId].users[userId]) {
-                lobbies[tId].users[userId].coins = coins;
-            }
-        }
     });
-
 
     socket.on("LEAVE_GAME", ({ roomId }) => {
 
@@ -214,7 +197,7 @@ io.on("connection", (socket) => {
     });
 
 
-  /*  socket.on("disconnect", () => {
+    socket.on("disconnect", () => {
         for (const tId in lobbies) {
             const lobby = lobbies[tId];
 
@@ -227,20 +210,7 @@ io.on("connection", (socket) => {
                 }
             }
         }
-    });*/
-
-    socket.on("disconnect", () => {
-        for (const tId in lobbies) {
-            const lobby = lobbies[tId];
-            for (const uid in lobby.users) {
-                if (lobby.users[uid].socketId === socket.id) {
-                    lobby.users[uid].lastSeen = Date.now();
-                    lobby.users[uid].socketId = null;
-                }
-            }
-        }
     });
-
 
 });
 
@@ -402,21 +372,6 @@ function checkAndSendResult(tournamentId) {
         sendTournamentResult(tournamentId);
     }
 }
-
-function sendFullState(socket, tournamentId, userId) {
-    const lobby = lobbies[tournamentId];
-    const user = lobby.users[userId];
-
-    socket.emit("RECONNECT_STATE", {
-        lobbyUsers: lobby.users,
-        tournamentTime: getTournamentTime(tournamentId),
-        round: getRound(tournamentId),
-        roundTime: getRoundTime(tournamentId),
-        roomId: user.roomId,
-        coins: user.coins
-    });
-}
-
 
 const PORT = process.env.PORT || 3000;
 
