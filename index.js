@@ -1,17 +1,17 @@
 const express = require("express");
 const app = express();
 const http = require("http").createServer(app);
-
 const io = require("socket.io")(http, {
-    cors: { origin: "*" } // allow Unity
+    cors: { origin: "*" } //// allow Unity
 });
 
 const rooms = {};
+
 const lobbies = {
     // tournamentId : {
-    //   users: {},
-    //   lobbyTime,
-    //   lobbyInterval
+    // users: {},
+    // lobbyTime,
+    // lobbyInterval
     // }
 };
 
@@ -21,7 +21,6 @@ io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
 
     socket.on("USERNAME", ({ username, avatar, tournamentId }) => {
-
         if (!lobbies[tournamentId]) {
             lobbies[tournamentId] = {
                 users: {},
@@ -38,10 +37,8 @@ io.on("connection", (socket) => {
             return;
         }
 
-        lobbies[tournamentId].users[socket.id] = {
-            username,
-            avatar
-        };
+        // lobbies[tournamentId].users[socket.id] = username;
+        lobbies[tournamentId].users[socket.id] = { username, avatar };
 
         socket.join(tournamentId);
 
@@ -52,12 +49,10 @@ io.on("connection", (socket) => {
 
     socket.on("GET_LOBBY_USERS", ({ tournamentId }) => {
         if (!lobbies[tournamentId]) return;
-
         socket.emit("USER_LIST", lobbies[tournamentId].users);
     });
 
     socket.on("JOIN_ROOM", ({ roomId }) => {
-
         let userData = null;
 
         for (const tId in lobbies) {
@@ -80,10 +75,30 @@ io.on("connection", (socket) => {
             avatar: userData.avatar
         };
 
-        io.to(roomId).emit("ROOM_USERS", {
-            users: rooms[roomId].users
-        });
+        io.to(roomId).emit("ROOM_USERS", { users: rooms[roomId].users });
     });
+
+    /* 
+    socket.on("TOURNAMENT_PLAYER_RESULT", ({ tournamentId, coins }) => {
+      console.log("RESULT RECEIVED:", tournamentId, coins);
+  
+      if (!tournamentResults[tournamentId])
+        tournamentResults[tournamentId] = {};
+  
+      const username = lobbies[tournamentId]?.users[socket.id]?.username;
+      if (!username) return;
+  
+      const username = user.username;
+      tournamentResults[tournamentId][username] = coins;
+  
+      const receivedCount = Object.keys(tournamentResults[tournamentId]).length;
+      const expectedCount = Object.keys(lobbies[tournamentId].users).length;
+  
+      console.log(`RESULT COUNT ${receivedCount}/${expectedCount}`);
+  
+      checkAndSendResult(tournamentId);
+    });
+    */
 
     socket.on("TOURNAMENT_PLAYER_RESULT", ({ tournamentId, coins }) => {
         console.log("RESULT RECEIVED:", tournamentId, coins);
@@ -94,7 +109,7 @@ io.on("connection", (socket) => {
         const user = lobbies[tournamentId]?.users[socket.id];
         if (!user) return;
 
-        const username = user.username;
+        const username = user.username; // STRING
 
         tournamentResults[tournamentId][username] = coins;
 
@@ -104,33 +119,28 @@ io.on("connection", (socket) => {
     socket.on("TOURNAMENT_COIN_UPDATE", ({ username, coins }) => {
         for (const roomId in rooms) {
             if (rooms[roomId].users[socket.id]) {
-                io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", {
-                    username,
-                    coins
-                });
+                io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", { username, coins });
             }
         }
     });
 
     socket.on("LEAVE_GAME", ({ roomId }) => {
-
         console.log("Player left game:", socket.id, "room:", roomId);
 
+        // remove from room
         if (rooms[roomId]) {
             delete rooms[roomId].users[socket.id];
         }
 
         socket.leave(roomId);
 
-        io.to(roomId).emit("ROOM_USERS", {
-            users: rooms[roomId]?.users
-        });
+        io.to(roomId).emit("ROOM_USERS", { users: rooms[roomId]?.users });
 
         for (const tId in lobbies) {
             if (lobbies[tId].users[socket.id]) {
-
                 delete lobbies[tId].users[socket.id];
 
+                // if result already started, re-check completion
                 if (tournamentResults[tId]) {
                     checkAndSendResult(tId);
                 }
@@ -145,12 +155,13 @@ io.on("connection", (socket) => {
 
         if (lobby.users[socket.id]) {
             delete lobby.users[socket.id];
-
             socket.leave(tournamentId);
 
             io.to(tournamentId).emit("USER_LIST", lobby.users);
+
             console.log("User left lobby:", socket.id);
 
+            // optional: stop timer if empty
             if (Object.keys(lobby.users).length === 0) {
                 resetTournament(tournamentId);
             }
@@ -160,7 +171,6 @@ io.on("connection", (socket) => {
     socket.on("disconnect", () => {
         for (const tId in lobbies) {
             const lobby = lobbies[tId];
-
             if (lobby.users[socket.id]) {
                 delete lobby.users[socket.id];
                 io.to(tId).emit("USER_LIST", lobby.users);
@@ -174,33 +184,29 @@ io.on("connection", (socket) => {
 });
 
 const LOBBY_TIME = 40;
+let lobbyTime = LOBBY_TIME;
+let lobbyInterval = null;
 
 function startLobbyTimer(tournamentId) {
-
     const lobby = lobbies[tournamentId];
     if (lobby.lobbyInterval) return;
 
     lobby.lobbyInterval = setInterval(() => {
-
         lobby.lobbyTime--;
 
-        io.to(tournamentId).emit("LOBBY_TIMER", {
-            time: lobby.lobbyTime
-        });
+        io.to(tournamentId).emit("LOBBY_TIMER", { time: lobby.lobbyTime });
 
         if (lobby.lobbyTime <= 0) {
             clearInterval(lobby.lobbyInterval);
             lobby.lobbyInterval = null;
             createMatches(tournamentId);
         }
-
     }, 1000);
 }
 
 const PLAYERS_PER_MATCH = 2;
 
 function createMatches(tournamentId) {
-
     const lobby = lobbies[tournamentId];
     if (!lobby) return;
 
@@ -210,7 +216,6 @@ function createMatches(tournamentId) {
     const sockets = lobbyUsers.map(id => io.sockets.sockets.get(id));
 
     for (let i = 0; i < sockets.length; i += PLAYERS_PER_MATCH) {
-
         const group = sockets.slice(i, i + PLAYERS_PER_MATCH);
         if (group.length < PLAYERS_PER_MATCH) break;
 
@@ -234,13 +239,11 @@ const tournamentTimers = {};
 const tournamentState = {};
 
 function startTournamentTimer(tournamentId) {
-
     let lastRound = 1;
 
+    // RESET state if new
     if (!tournamentState[tournamentId]) {
-        tournamentState[tournamentId] = {
-            startTime: Date.now()
-        };
+        tournamentState[tournamentId] = { startTime: Date.now() };
     }
 
     if (tournamentTimers[tournamentId]) return;
@@ -249,17 +252,16 @@ function startTournamentTimer(tournamentId) {
     const endTime = startTime + TOURNAMENT_TIME * 1000;
 
     tournamentTimers[tournamentId] = setInterval(() => {
-
         const now = Date.now();
 
-        const tournamentTime =
-            Math.max(0, Math.ceil((endTime - now) / 1000));
+        const tournamentTime = Math.max(
+            0,
+            Math.ceil((endTime - now) / 1000)
+        );
 
         const elapsed = Math.floor((now - startTime) / 1000);
-
         const round = Math.floor(elapsed / ROUND_TIME) + 1;
-        const roundTime =
-            Math.max(1, ROUND_TIME - (elapsed % ROUND_TIME));
+        const roundTime = Math.max(1, ROUND_TIME - (elapsed % ROUND_TIME));
 
         io.to(tournamentId).emit("TOURNAMENT_STATE", {
             tournamentTime,
@@ -276,7 +278,6 @@ function startTournamentTimer(tournamentId) {
             clearInterval(tournamentTimers[tournamentId]);
             console.log("Tournament ended. Waiting for player results...");
         }
-
     }, 1000);
 }
 
@@ -317,12 +318,13 @@ function resetTournament(tournamentId) {
 }
 
 function checkAndSendResult(tournamentId) {
+    const receivedCount = Object.keys(
+        tournamentResults[tournamentId] || {}
+    ).length;
 
-    const receivedCount =
-        Object.keys(tournamentResults[tournamentId] || {}).length;
-
-    const expectedCount =
-        Object.keys(lobbies[tournamentId]?.users || {}).length;
+    const expectedCount = Object.keys(
+        lobbies[tournamentId]?.users || {}
+    ).length;
 
     console.log(`[CHECK RESULT] ${receivedCount}/${expectedCount}`);
 
