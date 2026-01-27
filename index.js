@@ -38,7 +38,11 @@ io.on("connection", (socket) => {
             return;
         }
 
-        lobbies[tournamentId].users[socket.id] = username;
+        lobbies[tournamentId].users[socket.id] = {
+            username,
+            avatar
+        };
+
 
         socket.join(tournamentId);
 
@@ -74,7 +78,13 @@ io.on("connection", (socket) => {
             rooms[roomId] = { users: {} };
         }
 
-        rooms[roomId].users[socket.id] = username;
+        const userData = lobbies[tId].users[socket.id];
+
+        rooms[roomId].users[socket.id] = {
+            username: userData.username,
+            avatar: userData.avatar
+        };
+
      
 
         io.to(roomId).emit("ROOM_USERS", {
@@ -204,7 +214,7 @@ function startLobbyTimer(tournamentId) {
     }, 1000);
 }
 
-const PLAYERS_PER_MATCH = 2;
+const PLAYERS_PER_MATCH = 1;
 
 function createMatches(tournamentId) {
 
