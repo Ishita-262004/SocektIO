@@ -16,9 +16,6 @@ const lobbies = {
     // }
 };
 const tournamentResults = {};
-const tournamentState = {
-    // tournamentId: "waiting" | "running" | "finished"
-};
 
 
 io.on("connection", (socket) => {
@@ -33,7 +30,6 @@ io.on("connection", (socket) => {
                 lobbyInterval: null,
                 gameStarted: false
             };
-            tournamentState[tournamentId] = "waiting";
         }
         const lobby = lobbies[tournamentId];
 
@@ -150,33 +146,13 @@ io.on("connection", (socket) => {
         for (const tId in lobbies) {
             const lobby = lobbies[tId];
 
-            delete lobby.users[socket.id];
-            io.to(tId).emit("USER_LIST", lobby.users);
+            if (lobby.users[socket.id]) {
+                delete lobby.users[socket.id];
+                io.to(tId).emit("USER_LIST", lobby.users);
 
-            if (Object.keys(lobby.users).length === 0) {
-                if (lobby.lobbyInterval) {
-                    clearInterval(lobby.lobbyInterval);
+                if (Object.keys(lobby.users).length === 0) {
+                    resetTournament(tId);
                 }
-
-                delete lobbies[tId]; 
-                console.log("Lobby reset:", tId);
-            }
-
-            if (Object.keys(lobby.users).length === 0) {
-
-                if (lobby.lobbyInterval) {
-                    clearInterval(lobby.lobbyInterval);
-                }
-
-                if (tournamentTimers[tId]) {
-                    clearInterval(tournamentTimers[tId]);
-                    delete tournamentTimers[tId];
-                }
-
-                delete tournamentState[tId];
-                delete lobbies[tId];
-
-                console.log("Tournament reset:", tId);
             }
         }
     });
@@ -218,7 +194,7 @@ function createMatches(tournamentId) {
     if (!lobby) return;
 
     lobby.gameStarted = true;
-    tournamentState[tournamentId] = "running";
+    
     const lobbyUsers = Object.keys(lobbies[tournamentId].users);
     const sockets = lobbyUsers.map(id => io.sockets.sockets.get(id));
 
@@ -291,7 +267,6 @@ function startTournamentTimer(tournamentId) {
 }
 
 function sendTournamentResult(tournamentId) {
-    tournamentState[tournamentId] = "finished";
     for (const roomId in rooms) {
         if (roomId.startsWith(tournamentId)) {
             io.to(roomId).emit(
@@ -300,14 +275,28 @@ function sendTournamentResult(tournamentId) {
             );
         }
     }
+}
 
-    setTimeout(() => {
-        delete lobbies[tournamentId];
-        delete tournamentResults[tournamentId];
-        delete tournamentTimers[tournamentId];
-        delete tournamentState[tournamentId];
-        console.log("Tournament fully cleaned:", tournamentId);
-    }, 10000);
+function resetTournament(tournamentId) {
+    console.log("Reset tournament:", tournamentId);
+
+    if (lobbies[tournamentId]?.lobbyInterval)
+        clearInterval(lobbies[tournamentId].lobbyInterval);
+
+    if (tournamentTimers[tournamentId])
+        clearInterval(tournamentTimers[tournamentId]);
+
+    delete lobbies[tournamentId];
+    delete tournamentTimers[tournamentId];
+    delete tournamentState[tournamentId];
+    delete tournamentResults[tournamentId];
+
+    // delete rooms of this tournament
+    for (const roomId in rooms) {
+        if (roomId.startsWith(tournamentId)) {
+            delete rooms[roomId];
+        }
+    }
 }
 
 const PORT = process.env.PORT || 3000;
