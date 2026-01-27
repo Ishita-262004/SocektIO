@@ -275,6 +275,10 @@ function sendTournamentResult(tournamentId) {
             );
         }
     }
+
+    setTimeout(() => {
+        resetTournament(tournamentId);
+    }, 3000);
 }
 
 function resetTournament(tournamentId) {
@@ -291,7 +295,6 @@ function resetTournament(tournamentId) {
     delete tournamentState[tournamentId];
     delete tournamentResults[tournamentId];
 
-    // delete rooms of this tournament
     for (const roomId in rooms) {
         if (roomId.startsWith(tournamentId)) {
             delete rooms[roomId];
