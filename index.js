@@ -1,13 +1,12 @@
 const express = require("express");
 const app = express();
 const http = require("http").createServer(app);
+
 const io = require("socket.io")(http, {
-    cors: { origin: "*" } //// allow Unity
+    cors: { origin: "*" } // allow Unity
 });
 
 const rooms = {};
-
-
 const lobbies = {
     // tournamentId : {
     //   users: {},
@@ -15,8 +14,8 @@ const lobbies = {
     //   lobbyInterval
     // }
 };
-const tournamentResults = {};
 
+const tournamentResults = {};
 
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
@@ -31,20 +30,14 @@ io.on("connection", (socket) => {
                 gameStarted: false
             };
         }
-        const lobby = lobbies[tournamentId];
-        if (lobby.users[userId]) {
-        lobby.users[userId].socketId = socket.id;
-        socket.join(tournamentId);
 
-        sendFullState(socket, tournamentId, userId);
-        return;
-    }
+        const lobby = lobbies[tournamentId];
+
         if (lobby.gameStarted) {
             socket.emit("LOBBY_CLOSED");
             return;
         }
 
-      //  lobbies[tournamentId].users[socket.id] = username;
         lobbies[tournamentId].users[socket.id] = {
             username,
             avatar
@@ -53,7 +46,7 @@ io.on("connection", (socket) => {
         socket.join(tournamentId);
 
         io.to(tournamentId).emit("USER_LIST", lobbies[tournamentId].users);
-       
+
         startLobbyTimer(tournamentId);
     });
 
@@ -62,8 +55,6 @@ io.on("connection", (socket) => {
 
         socket.emit("USER_LIST", lobbies[tournamentId].users);
     });
-
-   
 
     socket.on("JOIN_ROOM", ({ roomId }) => {
 
@@ -94,30 +85,6 @@ io.on("connection", (socket) => {
         });
     });
 
-   /* socket.on("TOURNAMENT_PLAYER_RESULT", ({ tournamentId, coins }) => {
-        console.log("RESULT RECEIVED:", tournamentId, coins);
-
-        if (!tournamentResults[tournamentId])
-            tournamentResults[tournamentId] = {};
-
-        const username = lobbies[tournamentId]?.users[socket.id]?.username;
-        if (!username) return;
-        const username = user.username;
-        tournamentResults[tournamentId][username] = coins;
-
-        const receivedCount =
-            Object.keys(tournamentResults[tournamentId]).length;
-
-        const expectedCount =
-            Object.keys(lobbies[tournamentId].users).length;
-
-        console.log(
-            `RESULT COUNT ${receivedCount}/${expectedCount}`
-        );
-
-        checkAndSendResult(tournamentId);
-
-    });*/
     socket.on("TOURNAMENT_PLAYER_RESULT", ({ tournamentId, coins }) => {
         console.log("RESULT RECEIVED:", tournamentId, coins);
 
@@ -127,13 +94,12 @@ io.on("connection", (socket) => {
         const user = lobbies[tournamentId]?.users[socket.id];
         if (!user) return;
 
-        const username = user.username; // STRING
+        const username = user.username;
 
         tournamentResults[tournamentId][username] = coins;
 
         checkAndSendResult(tournamentId);
     });
-
 
     socket.on("TOURNAMENT_COIN_UPDATE", ({ username, coins }) => {
         for (const roomId in rooms) {
@@ -150,7 +116,6 @@ io.on("connection", (socket) => {
 
         console.log("Player left game:", socket.id, "room:", roomId);
 
-        // remove from room
         if (rooms[roomId]) {
             delete rooms[roomId].users[socket.id];
         }
@@ -166,16 +131,13 @@ io.on("connection", (socket) => {
 
                 delete lobbies[tId].users[socket.id];
 
-                // if result already started, re-check completion
                 if (tournamentResults[tId]) {
                     checkAndSendResult(tId);
                 }
-
                 break;
             }
         }
     });
-
 
     socket.on("LEAVE_LOBBY", ({ tournamentId }) => {
         const lobby = lobbies[tournamentId];
@@ -189,13 +151,11 @@ io.on("connection", (socket) => {
             io.to(tournamentId).emit("USER_LIST", lobby.users);
             console.log("User left lobby:", socket.id);
 
-            // optional: stop timer if empty
             if (Object.keys(lobby.users).length === 0) {
                 resetTournament(tournamentId);
             }
         }
     });
-
 
     socket.on("disconnect", () => {
         for (const tId in lobbies) {
@@ -211,12 +171,9 @@ io.on("connection", (socket) => {
             }
         }
     });
-
 });
 
-const LOBBY_TIME = 40; 
-let lobbyTime = LOBBY_TIME;
-let lobbyInterval = null;
+const LOBBY_TIME = 40;
 
 function startLobbyTimer(tournamentId) {
 
@@ -234,7 +191,6 @@ function startLobbyTimer(tournamentId) {
         if (lobby.lobbyTime <= 0) {
             clearInterval(lobby.lobbyInterval);
             lobby.lobbyInterval = null;
-
             createMatches(tournamentId);
         }
 
@@ -249,7 +205,7 @@ function createMatches(tournamentId) {
     if (!lobby) return;
 
     lobby.gameStarted = true;
-    
+
     const lobbyUsers = Object.keys(lobbies[tournamentId].users);
     const sockets = lobbyUsers.map(id => io.sockets.sockets.get(id));
 
@@ -266,26 +222,27 @@ function createMatches(tournamentId) {
             roomId,
             players: group.map(s => lobbies[tournamentId].users[s.id])
         });
+
         startTournamentTimer(tournamentId);
     }
 }
 
 const TOURNAMENT_TIME = 100;
 const ROUND_TIME = 40;
+
 const tournamentTimers = {};
 const tournamentState = {};
 
 function startTournamentTimer(tournamentId) {
+
     let lastRound = 1;
 
-    // RESET state if new
     if (!tournamentState[tournamentId]) {
         tournamentState[tournamentId] = {
             startTime: Date.now()
         };
     }
 
-   
     if (tournamentTimers[tournamentId]) return;
 
     const startTime = tournamentState[tournamentId].startTime;
@@ -301,7 +258,8 @@ function startTournamentTimer(tournamentId) {
         const elapsed = Math.floor((now - startTime) / 1000);
 
         const round = Math.floor(elapsed / ROUND_TIME) + 1;
-        const roundTime = Math.max(1, ROUND_TIME - (elapsed % ROUND_TIME));
+        const roundTime =
+            Math.max(1, ROUND_TIME - (elapsed % ROUND_TIME));
 
         io.to(tournamentId).emit("TOURNAMENT_STATE", {
             tournamentTime,
@@ -313,6 +271,7 @@ function startTournamentTimer(tournamentId) {
             io.to(tournamentId).emit("ROUND_ENDED", { round: lastRound });
             lastRound = round;
         }
+
         if (tournamentTime <= 0) {
             clearInterval(tournamentTimers[tournamentId]);
             console.log("Tournament ended. Waiting for player results...");
@@ -358,15 +317,14 @@ function resetTournament(tournamentId) {
 }
 
 function checkAndSendResult(tournamentId) {
+
     const receivedCount =
         Object.keys(tournamentResults[tournamentId] || {}).length;
 
     const expectedCount =
         Object.keys(lobbies[tournamentId]?.users || {}).length;
 
-    console.log(
-        `[CHECK RESULT] ${receivedCount}/${expectedCount}`
-    );
+    console.log(`[CHECK RESULT] ${receivedCount}/${expectedCount}`);
 
     if (expectedCount === 0 || receivedCount === expectedCount) {
         sendTournamentResult(tournamentId);
@@ -378,4 +336,3 @@ const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
     console.log("Matchmaking Server start on port", PORT);
 });
-
