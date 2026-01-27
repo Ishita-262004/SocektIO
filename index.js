@@ -109,9 +109,8 @@ io.on("connection", (socket) => {
             `RESULT COUNT ${receivedCount}/${expectedCount}`
         );
 
-        if (receivedCount === expectedCount) {
-            sendTournamentResult(tournamentId);
-        }
+        checkAndSendResult(tournamentId);
+
     });
 
     socket.on("TOURNAMENT_COIN_UPDATE", ({ username, coins }) => {
@@ -129,20 +128,32 @@ io.on("connection", (socket) => {
 
         console.log("Player left game:", socket.id, "room:", roomId);
 
-        // remove from room users
+        // remove from room
         if (rooms[roomId]) {
             delete rooms[roomId].users[socket.id];
         }
 
         socket.leave(roomId);
 
-        // notify remaining players
         io.to(roomId).emit("ROOM_USERS", {
-            users: rooms[roomId]?.users 
+            users: rooms[roomId]?.users
         });
 
-      
+        for (const tId in lobbies) {
+            if (lobbies[tId].users[socket.id]) {
+
+                delete lobbies[tId].users[socket.id];
+
+                // if result already started, re-check completion
+                if (tournamentResults[tId]) {
+                    checkAndSendResult(tId);
+                }
+
+                break;
+            }
+        }
     });
+
 
     socket.on("LEAVE_LOBBY", ({ tournamentId }) => {
         const lobby = lobbies[tournamentId];
@@ -321,6 +332,22 @@ function resetTournament(tournamentId) {
         if (roomId.startsWith(tournamentId)) {
             delete rooms[roomId];
         }
+    }
+}
+
+function checkAndSendResult(tournamentId) {
+    const receivedCount =
+        Object.keys(tournamentResults[tournamentId] || {}).length;
+
+    const expectedCount =
+        Object.keys(lobbies[tournamentId]?.users || {}).length;
+
+    console.log(
+        `[CHECK RESULT] ${receivedCount}/${expectedCount}`
+    );
+
+    if (expectedCount === 0 || receivedCount === expectedCount) {
+        sendTournamentResult(tournamentId);
     }
 }
 
