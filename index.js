@@ -88,15 +88,15 @@ io.on("connection", (socket) => {
         });
     });
 
-    socket.on("TOURNAMENT_PLAYER_RESULT", ({ tournamentId, coins }) => {
+   /* socket.on("TOURNAMENT_PLAYER_RESULT", ({ tournamentId, coins }) => {
         console.log("RESULT RECEIVED:", tournamentId, coins);
 
         if (!tournamentResults[tournamentId])
             tournamentResults[tournamentId] = {};
 
-        const username = lobbies[tournamentId]?.users[socket.id];
+        const username = lobbies[tournamentId]?.users[socket.id]?.username;
         if (!username) return;
-
+        const username = user.username;
         tournamentResults[tournamentId][username] = coins;
 
         const receivedCount =
@@ -111,7 +111,23 @@ io.on("connection", (socket) => {
 
         checkAndSendResult(tournamentId);
 
+    });*/
+    socket.on("TOURNAMENT_PLAYER_RESULT", ({ tournamentId, coins }) => {
+        console.log("RESULT RECEIVED:", tournamentId, coins);
+
+        if (!tournamentResults[tournamentId])
+            tournamentResults[tournamentId] = {};
+
+        const user = lobbies[tournamentId]?.users[socket.id];
+        if (!user) return;
+
+        const username = user.username; // STRING
+
+        tournamentResults[tournamentId][username] = coins;
+
+        checkAndSendResult(tournamentId);
     });
+
 
     socket.on("TOURNAMENT_COIN_UPDATE", ({ username, coins }) => {
         for (const roomId in rooms) {
