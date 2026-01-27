@@ -21,7 +21,7 @@ const tournamentResults = {};
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
 
-    socket.on("USERNAME", ({ username, avatar ,tournamentId }) => {
+    socket.on("USERNAME", ({ username, tournamentId }) => {
 
         if (!lobbies[tournamentId]) {
             lobbies[tournamentId] = {
@@ -38,10 +38,7 @@ io.on("connection", (socket) => {
             return;
         }
 
-        lobbies[tournamentId].users[socket.id] = {
-            username,
-            avatar
-        };
+        lobbies[tournamentId].users[socket.id] = username;
 
         socket.join(tournamentId);
 
@@ -77,8 +74,8 @@ io.on("connection", (socket) => {
             rooms[roomId] = { users: {} };
         }
 
-        rooms[roomId].users[socket.id] = lobbies[tId].users[socket.id];
-
+        rooms[roomId].users[socket.id] = username;
+     
 
         io.to(roomId).emit("ROOM_USERS", {
             users: rooms[roomId].users
