@@ -21,7 +21,7 @@ const tournamentResults = {};
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
 
-    socket.on("USERNAME", ({ username, tournamentId }) => {
+    socket.on("USERNAME", ({ username, avatar, tournamentId }) => {
 
         if (!lobbies[tournamentId]) {
             lobbies[tournamentId] = {
@@ -61,16 +61,16 @@ io.on("connection", (socket) => {
 
     socket.on("JOIN_ROOM", ({ roomId }) => {
 
-        let username = null;
+        let userData = null;
 
         for (const tId in lobbies) {
             if (lobbies[tId].users[socket.id]) {
-                username = lobbies[tId].users[socket.id];
+                userData = lobbies[tId].users[socket.id];
                 break;
             }
         }
-        if (!username) return;
 
+        if (!userData) return;
 
         socket.join(roomId);
 
@@ -78,14 +78,14 @@ io.on("connection", (socket) => {
             rooms[roomId] = { users: {} };
         }
 
-        rooms[roomId].users[socket.id] = username;
-     
+        rooms[roomId].users[socket.id] = {
+            username: userData.username,
+            avatar: userData.avatar
+        };
 
         io.to(roomId).emit("ROOM_USERS", {
             users: rooms[roomId].users
         });
-
-     
     });
 
     socket.on("TOURNAMENT_PLAYER_RESULT", ({ tournamentId, coins }) => {
