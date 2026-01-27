@@ -21,7 +21,7 @@ const tournamentResults = {};
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
 
-    socket.on("USERNAME", ({ username, tournamentId }) => {
+    socket.on("USERNAME", ({ username, avatar ,tournamentId }) => {
 
         if (!lobbies[tournamentId]) {
             lobbies[tournamentId] = {
@@ -37,7 +37,10 @@ io.on("connection", (socket) => {
             socket.emit("LOBBY_CLOSED");
             return;
         }
-
+        lobbies[tournamentId].users[socket.id] = {
+            username,
+            avatar
+        };
         lobbies[tournamentId].users[socket.id] = username;
 
         socket.join(tournamentId);
@@ -74,8 +77,7 @@ io.on("connection", (socket) => {
             rooms[roomId] = { users: {} };
         }
 
-        rooms[roomId].users[socket.id] = username;
-     
+        rooms[roomId].users[socket.id] = lobbies[tId].users[socket.id];
 
         io.to(roomId).emit("ROOM_USERS", {
             users: rooms[roomId].users
@@ -204,7 +206,7 @@ function startLobbyTimer(tournamentId) {
     }, 1000);
 }
 
-const PLAYERS_PER_MATCH = 1;
+const PLAYERS_PER_MATCH = 2;
 
 function createMatches(tournamentId) {
 
