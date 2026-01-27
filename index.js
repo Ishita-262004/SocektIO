@@ -140,6 +140,24 @@ io.on("connection", (socket) => {
       
     });
 
+    socket.on("LEAVE_LOBBY", ({ tournamentId }) => {
+        const lobby = lobbies[tournamentId];
+        if (!lobby) return;
+
+        if (lobby.users[socket.id]) {
+            delete lobby.users[socket.id];
+
+            socket.leave(tournamentId);
+
+            io.to(tournamentId).emit("USER_LIST", lobby.users);
+            console.log("User left lobby:", socket.id);
+
+            // optional: stop timer if empty
+            if (Object.keys(lobby.users).length === 0) {
+                resetTournament(tournamentId);
+            }
+        }
+    });
 
 
     socket.on("disconnect", () => {
