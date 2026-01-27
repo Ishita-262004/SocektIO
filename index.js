@@ -37,11 +37,11 @@ io.on("connection", (socket) => {
             socket.emit("LOBBY_CLOSED");
             return;
         }
+
         lobbies[tournamentId].users[socket.id] = {
             username,
             avatar
         };
-      //  lobbies[tournamentId].users[socket.id] = username;
 
         socket.join(tournamentId);
 
@@ -60,15 +60,16 @@ io.on("connection", (socket) => {
 
     socket.on("JOIN_ROOM", ({ roomId }) => {
 
-        let userData = null;
+        let username = null;
 
         for (const tId in lobbies) {
             if (lobbies[tId].users[socket.id]) {
-                userData = lobbies[tId].users[socket.id];
+                username = lobbies[tId].users[socket.id];
                 break;
             }
         }
-        if (!userData) return;
+        if (!username) return;
+
 
         socket.join(roomId);
 
@@ -76,13 +77,15 @@ io.on("connection", (socket) => {
             rooms[roomId] = { users: {} };
         }
 
-        rooms[roomId].users[socket.id] = userData;
+        rooms[roomId].users[socket.id] = lobbies[tId].users[socket.id];
+
 
         io.to(roomId).emit("ROOM_USERS", {
             users: rooms[roomId].users
         });
-    });
 
+     
+    });
 
     socket.on("TOURNAMENT_PLAYER_RESULT", ({ tournamentId, coins }) => {
         console.log("RESULT RECEIVED:", tournamentId, coins);
