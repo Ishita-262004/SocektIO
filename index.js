@@ -21,7 +21,7 @@ const tournamentResults = {};
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
 
-    socket.on("USERNAME", ({ username, tournamentId }) => {
+    socket.on("USERNAME", ({ username, avatar, tournamentId }) => {
 
         if (!lobbies[tournamentId]) {
             lobbies[tournamentId] = {
@@ -78,7 +78,7 @@ io.on("connection", (socket) => {
             rooms[roomId] = { users: {} };
         }
 
-        const userData = lobbies[tId].users[socket.id];
+       // const userData = lobbies[tId].users[socket.id];
 
         rooms[roomId].users[socket.id] = {
             username: userData.username,
