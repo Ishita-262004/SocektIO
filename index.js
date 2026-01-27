@@ -38,7 +38,11 @@ io.on("connection", (socket) => {
             return;
         }
 
-        lobbies[tournamentId].users[socket.id] = username;
+      //  lobbies[tournamentId].users[socket.id] = username;
+        lobbies[tournamentId].users[socket.id] = {
+            username,
+            avatar
+        };
 
         socket.join(tournamentId);
 
