@@ -16,6 +16,9 @@ const lobbies = {
     // }
 };
 const tournamentResults = {};
+const tournamentState = {
+    // tournamentId: "waiting" | "running" | "finished"
+};
 
 
 io.on("connection", (socket) => {
@@ -30,6 +33,7 @@ io.on("connection", (socket) => {
                 lobbyInterval: null,
                 gameStarted: false
             };
+            tournamentState[tournamentId] = "waiting";
         }
         const lobby = lobbies[tournamentId];
 
@@ -214,7 +218,7 @@ function createMatches(tournamentId) {
     if (!lobby) return;
 
     lobby.gameStarted = true;
-    
+    tournamentState[tournamentId] = "running";
     const lobbyUsers = Object.keys(lobbies[tournamentId].users);
     const sockets = lobbyUsers.map(id => io.sockets.sockets.get(id));
 
@@ -287,6 +291,7 @@ function startTournamentTimer(tournamentId) {
 }
 
 function sendTournamentResult(tournamentId) {
+    tournamentState[tournamentId] = "finished";
     for (const roomId in rooms) {
         if (roomId.startsWith(tournamentId)) {
             io.to(roomId).emit(
@@ -295,6 +300,14 @@ function sendTournamentResult(tournamentId) {
             );
         }
     }
+
+    setTimeout(() => {
+        delete lobbies[tournamentId];
+        delete tournamentResults[tournamentId];
+        delete tournamentTimers[tournamentId];
+        delete tournamentState[tournamentId];
+        console.log("Tournament fully cleaned:", tournamentId);
+    }, 10000);
 }
 
 const PORT = process.env.PORT || 3000;
