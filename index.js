@@ -16,6 +16,8 @@ const lobbies = {
 };
 
 const tournamentResults = {};
+const roomResults = {};
+
 
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
@@ -115,7 +117,7 @@ io.on("connection", (socket) => {
     });
     */
 
-    socket.on("TOURNAMENT_PLAYER_RESULT", ({ tournamentId, coins }) => {
+    /*socket.on("TOURNAMENT_PLAYER_RESULT", ({ tournamentId, coins }) => {
         console.log("RESULT RECEIVED:", tournamentId, coins);
 
         if (!tournamentResults[tournamentId])
@@ -129,7 +131,28 @@ io.on("connection", (socket) => {
         tournamentResults[tournamentId][username] = coins;
 
         checkAndSendResult(tournamentId);
+    });*/
+
+    socket.on("TOURNAMENT_PLAYER_RESULT", ({ roomId, username, coins }) => {
+
+        if (!roomResults[roomId])
+            roomResults[roomId] = {};
+
+        roomResults[roomId][username] = coins;
+
+        const expected = Object.keys(rooms[roomId]?.users || {}).length;
+        const received = Object.keys(roomResults[roomId]).length;
+
+        console.log(`[ROOM RESULT] ${roomId} ${received}/${expected}`);
+
+        if (expected > 0 && received === expected) {
+            io.to(roomId).emit(
+                "TOURNAMENT_RESULT",
+                roomResults[roomId]
+            );
+        }
     });
+
 
     socket.on("TOURNAMENT_COIN_UPDATE", ({ username, coins }) => {
         for (const roomId in rooms) {
@@ -156,9 +179,9 @@ io.on("connection", (socket) => {
                 delete lobbies[tId].users[socket.id];
 
                 // if result already started, re-check completion
-                if (tournamentResults[tId]) {
+               /* if (tournamentResults[tId]) {
                     checkAndSendResult(tId);
-                }
+                }*/
                 break;
             }
         }
@@ -296,7 +319,7 @@ function startTournamentTimer(tournamentId) {
     }, 1000);
 }
 
-function sendTournamentResult(tournamentId) {
+/*function sendTournamentResult(tournamentId) {
     for (const roomId in rooms) {
         if (roomId.startsWith(tournamentId)) {
             io.to(roomId).emit(
@@ -309,7 +332,7 @@ function sendTournamentResult(tournamentId) {
     setTimeout(() => {
         resetTournament(tournamentId);
     }, 3000);
-}
+}*/
 
 function resetTournament(tournamentId) {
     console.log("Reset tournament:", tournamentId);
@@ -323,7 +346,7 @@ function resetTournament(tournamentId) {
     delete lobbies[tournamentId];
     delete tournamentTimers[tournamentId];
     delete tournamentState[tournamentId];
-    delete tournamentResults[tournamentId];
+    //delete tournamentResults[tournamentId];
 
     for (const roomId in rooms) {
         if (roomId.startsWith(tournamentId)) {
@@ -332,7 +355,7 @@ function resetTournament(tournamentId) {
     }
 }
 
-function checkAndSendResult(tournamentId) {
+/*function checkAndSendResult(tournamentId) {
     const receivedCount = Object.keys(
         tournamentResults[tournamentId] || {}
     ).length;
@@ -346,7 +369,7 @@ function checkAndSendResult(tournamentId) {
     if (expectedCount === 0 || receivedCount === expectedCount) {
         sendTournamentResult(tournamentId);
     }
-}
+}*/
 
 const PORT = process.env.PORT || 3000;
 
