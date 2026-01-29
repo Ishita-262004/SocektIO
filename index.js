@@ -248,7 +248,7 @@ io.on("connection", (socket) => {
         }
     });
 
-    socket.on("LEAVE_GAME", ({ roomId }) => {
+   /* socket.on("LEAVE_GAME", ({ roomId }) => {
         console.log("Player left game:", socket.id, "room:", roomId);
 
         // remove from room
@@ -265,13 +265,25 @@ io.on("connection", (socket) => {
                 delete lobbies[tId].users[socket.id];
 
                 // if result already started, re-check completion
-               /* if (tournamentResults[tId]) {
+               *//* if (tournamentResults[tId]) {
                     checkAndSendResult(tId);
-                }*/
+                }*//*
                 break;
             }
         }
+    });*/
+    socket.on("LEAVE_GAME", ({ roomId, username }) => {
+        if (rooms[roomId]) {
+            delete rooms[roomId].users[username];
+        }
+
+        socket.leave(roomId);
+
+        io.to(roomId).emit("ROOM_USERS", {
+            users: rooms[roomId]?.users
+        });
     });
+
 
     socket.on("LEAVE_LOBBY", ({ tournamentId }) => {
         const lobby = lobbies[tournamentId];
@@ -369,7 +381,7 @@ const PLAYERS_PER_MATCH = 1;
     }
 }
 */
-function createMatches(tournamentId) {
+/*function createMatches(tournamentId) {
     const lobby = lobbies[tournamentId];
     if (!lobby) return;
 
@@ -409,7 +421,52 @@ function createMatches(tournamentId) {
 
         startTournamentTimer(tournamentId);
     }
+}*/
+function createMatches(tournamentId) {
+    const lobby = lobbies[tournamentId];
+    if (!lobby) return;
+
+    lobby.gameStarted = true;
+
+    const usernames = Object.keys(lobby.users);
+
+    for (let i = 0; i < usernames.length; i += PLAYERS_PER_MATCH) {
+        const group = usernames.slice(i, i + PLAYERS_PER_MATCH);
+        if (group.length < PLAYERS_PER_MATCH) break;
+
+        const roomId = tournamentId + "_ROOM_" + Date.now();
+
+        rooms[roomId] = { users: {} };
+
+        group.forEach(username => {
+            const user = lobby.users[username];
+            const s = io.sockets.sockets.get(user.socketId);
+            if (!s) return;
+
+            s.join(roomId);
+
+            rooms[roomId].users[username] = {
+                username: user.username,
+                avatar: user.avatar,
+                socketId: user.socketId
+            };
+        });
+
+        // SEND ROOM USERS
+        io.to(roomId).emit("ROOM_USERS", {
+            users: rooms[roomId].users
+        });
+
+        // SEND MATCH FOUND
+        io.to(roomId).emit("MATCH_FOUND", {
+            roomId,
+            players: group.map(u => lobby.users[u])
+        });
+
+        startTournamentTimer(tournamentId);
+    }
 }
+
 
 const TOURNAMENT_TIME = 100;
 const ROUND_TIME = 40;
