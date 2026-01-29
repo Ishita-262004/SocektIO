@@ -130,7 +130,7 @@ io.on("connection", (socket) => {
     });
 */
 
-    socket.on("JOIN_ROOM", ({ roomId }) => {
+   /* socket.on("JOIN_ROOM", ({ roomId }) => {
         if (!roomId) return;
 
         let userData = null;
@@ -157,8 +157,8 @@ io.on("connection", (socket) => {
         io.to(roomId).emit("ROOM_USERS", {
             users: rooms[roomId].users
         });
-    });
-    /*socket.on("JOIN_ROOM", ({ roomId, username }) => {
+    });*/
+    socket.on("JOIN_ROOM", ({ roomId, username }) => {
 
         if (!rooms[roomId])
             rooms[roomId] = { users: {} };
@@ -173,7 +173,7 @@ io.on("connection", (socket) => {
         io.to(roomId).emit("ROOM_USERS", {
             users: rooms[roomId].users
         });
-    });*/
+    });
 
 
     /* 
@@ -385,7 +385,7 @@ const PLAYERS_PER_MATCH = 2;
     }
 }
 */
-function createMatches(tournamentId) {
+/*function createMatches(tournamentId) {
     const lobby = lobbies[tournamentId];
     if (!lobby) return;
 
@@ -425,8 +425,8 @@ function createMatches(tournamentId) {
 
         startTournamentTimer(tournamentId);
     }
-}
-/*function createMatches(tournamentId) {
+}*/
+function createMatches(tournamentId) {
     const lobby = lobbies[tournamentId];
     if (!lobby) return;
 
@@ -469,7 +469,7 @@ function createMatches(tournamentId) {
 
         startTournamentTimer(tournamentId);
     }
-}*/
+}
 
 
 const TOURNAMENT_TIME = 100;
