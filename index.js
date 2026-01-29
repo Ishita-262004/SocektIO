@@ -339,7 +339,7 @@ const LOBBY_TIME = 40;
 /*let lobbyTime = LOBBY_TIME;
 let lobbyInterval = null;*/
 
-/*function startLobbyTimer(tournamentId) {
+function startLobbyTimer(tournamentId) {
     const lobby = lobbies[tournamentId];
     if (lobby.lobbyInterval) return;
 
@@ -354,36 +354,9 @@ let lobbyInterval = null;*/
             createMatches(tournamentId);
         }
     }, 1000);
-}*/
-function startLobbyTimer(tournamentId) {
-    const lobby = lobbies[tournamentId];
-    if (!lobby) return;
-
-    if (lobby.lobbyInterval) return;
-
-    lobby.lobbyInterval = setInterval(() => {
-
-        if (!lobbies[tournamentId]) {
-            clearInterval(lobby.lobbyInterval);
-            return;
-        }
-
-        lobby.lobbyTime--;
-
-        io.to(tournamentId).emit("LOBBY_TIMER", {
-            time: Math.max(0, lobby.lobbyTime)
-        });
-
-        if (lobby.lobbyTime <= 0) {
-            clearInterval(lobby.lobbyInterval);
-            lobby.lobbyInterval = null;
-            createMatches(tournamentId);
-        }
-
-    }, 1000);
 }
 
-const PLAYERS_PER_MATCH = 2;
+const PLAYERS_PER_MATCH = 1;
 
 /*function createMatches(tournamentId) {
     const lobby = lobbies[tournamentId];
