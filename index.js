@@ -22,7 +22,7 @@ const roomResults = {};
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
 
-    socket.on("USERNAME", ({ username, avatar, tournamentId }) => {
+   /* socket.on("USERNAME", ({ username, avatar, tournamentId }) => {
         if (!lobbies[tournamentId]) {
             lobbies[tournamentId] = {
                 users: {},
@@ -47,7 +47,40 @@ io.on("connection", (socket) => {
         io.to(tournamentId).emit("USER_LIST", lobbies[tournamentId].users);
 
         startLobbyTimer(tournamentId);
+    });*/
+    socket.on("USERNAME", ({ username, avatar, tournamentId }) => {
+
+        if (!lobbies[tournamentId]) {
+            lobbies[tournamentId] = {
+                users: {},
+                lobbyTime: LOBBY_TIME,
+                lobbyInterval: null,
+                gameStarted: false
+            };
+        }
+
+        const lobby = lobbies[tournamentId];
+
+        if (lobby.users[username]) {
+            lobby.users[username].socketId = socket.id;
+            lobby.users[username].disconnected = false;
+        }
+        else {
+            lobby.users[username] = {
+                username,
+                avatar,
+                socketId: socket.id,
+                disconnected: false
+            };
+        }
+
+        socket.join(tournamentId);
+
+        io.to(tournamentId).emit("USER_LIST", lobby.users);
+
+        startLobbyTimer(tournamentId);
     });
+
 
     socket.on("GET_LOBBY_USERS", ({ tournamentId }) => {
         if (!lobbies[tournamentId]) return;
@@ -96,7 +129,7 @@ io.on("connection", (socket) => {
     });
 */
 
-    socket.on("JOIN_ROOM", ({ roomId }) => {
+   /* socket.on("JOIN_ROOM", ({ roomId }) => {
         if (!roomId) return;
 
         let userData = null;
@@ -123,7 +156,24 @@ io.on("connection", (socket) => {
         io.to(roomId).emit("ROOM_USERS", {
             users: rooms[roomId].users
         });
+    });*/
+    socket.on("JOIN_ROOM", ({ roomId, username }) => {
+
+        if (!rooms[roomId])
+            rooms[roomId] = { users: {} };
+
+        rooms[roomId].users[username] = {
+            ...rooms[roomId].users[username],
+            socketId: socket.id
+        };
+
+        socket.join(roomId);
+
+        io.to(roomId).emit("ROOM_USERS", {
+            users: rooms[roomId].users
+        });
     });
+
 
     /* 
     socket.on("TOURNAMENT_PLAYER_RESULT", ({ tournamentId, coins }) => {
@@ -242,7 +292,7 @@ io.on("connection", (socket) => {
         }
     });
 
-    socket.on("disconnect", () => {
+    /*socket.on("disconnect", () => {
         for (const tId in lobbies) {
             const lobby = lobbies[tId];
             if (lobby.users[socket.id]) {
@@ -254,7 +304,20 @@ io.on("connection", (socket) => {
                 }
             }
         }
+    });*/
+    socket.on("disconnect", () => {
+        for (const tId in lobbies) {
+            const lobby = lobbies[tId];
+
+            for (const username in lobby.users) {
+                if (lobby.users[username].socketId === socket.id) {
+                    lobby.users[username].disconnected = true;
+                    console.log("User disconnected:", username);
+                }
+            }
+        }
     });
+
 });
 
 const LOBBY_TIME = 40;
