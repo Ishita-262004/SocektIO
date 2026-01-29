@@ -383,7 +383,12 @@ function resetTournament(tournamentId) {
         }
     }
 
-    delete roomResults;
+    for (const r in roomResults) {
+        if (r.startsWith(tournamentId)) {
+            delete roomResults[r];
+        }
+    }
+
 }
 
 /*function checkAndSendResult(tournamentId) {
