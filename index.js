@@ -54,7 +54,7 @@ io.on("connection", (socket) => {
         socket.emit("USER_LIST", lobbies[tournamentId].users);
     });
 
-    socket.on("JOIN_ROOM", ({ roomId }) => {
+   /* socket.on("JOIN_ROOM", ({ roomId }) => {
         let userData = null;
 
         for (const tId in lobbies) {
@@ -68,14 +68,14 @@ io.on("connection", (socket) => {
 
         socket.join(roomId);
 
-       /* if (!rooms[roomId]) {
+       *//* if (!rooms[roomId]) {
             rooms[roomId] = { users: {} };
         }
 
         rooms[roomId].users[socket.id] = {
             username: userData.username,
             avatar: userData.avatar
-        };*/
+        };*//*
 
         if (!rooms[roomId]) {
             rooms[roomId] = { users: {} };
@@ -93,6 +93,36 @@ io.on("connection", (socket) => {
 
 
         io.to(roomId).emit("ROOM_USERS", { users: rooms[roomId].users });
+    });
+*/
+
+    socket.on("JOIN_ROOM", ({ roomId }) => {
+        if (!roomId) return;
+
+        let userData = null;
+        for (const tId in lobbies) {
+            if (lobbies[tId].users[socket.id]) {
+                userData = lobbies[tId].users[socket.id];
+                break;
+            }
+        }
+        if (!userData) return;
+
+        if (!rooms[roomId])
+            rooms[roomId] = { users: {} };
+
+        if (!rooms[roomId].users[socket.id]) {
+            rooms[roomId].users[socket.id] = {
+                username: userData.username,
+                avatar: userData.avatar
+            };
+        }
+
+        socket.join(roomId);
+
+        io.to(roomId).emit("ROOM_USERS", {
+            users: rooms[roomId].users
+        });
     });
 
     /* 
