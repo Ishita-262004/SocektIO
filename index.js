@@ -126,25 +126,34 @@ io.on("connection", (socket) => {
             users: rooms[roomId].users
         });
     });*/
-    socket.on("JOIN_ROOM", ({ roomId, username }) => {
-        if (!roomId || !username) return;
+    socket.on("JOIN_TOURNAMENT", ({ tournamentId }) => {
+        if (!tournamentId) return;
 
-        if (!rooms[roomId])
-            rooms[roomId] = { users: {} };
+        socket.join(tournamentId);
 
-        rooms[roomId].users[username] = {
-            socketId: socket.id,
-            username,
-            avatar: rooms[roomId].users[username]?.avatar || "default_avatar",
-            coins: rooms[roomId].users[username]?.coins || 0
-        };
+        // FORCE START TIMER IF NOT RUNNING
+        if (!tournamentTimers[tournamentId]) {
+            startTournamentTimer(tournamentId);
+        }
 
-        socket.join(roomId);
+        // RESEND CURRENT STATE
+        if (tournamentState[tournamentId]) {
+            const startTime = tournamentState[tournamentId].startTime;
+            const now = Date.now();
 
-        socket.emit("ROOM_USERS", {
-            users: rooms[roomId].users
-        });
+            const elapsed = Math.floor((now - startTime) / 1000);
+            const tournamentTime = Math.max(0, TOURNAMENT_TIME - elapsed);
+            const round = Math.floor(elapsed / ROUND_TIME) + 1;
+            const roundTime = Math.max(1, ROUND_TIME - (elapsed % ROUND_TIME));
+
+            socket.emit("TOURNAMENT_STATE", {
+                tournamentTime,
+                round,
+                roundTime
+            });
+        }
     });
+
 
 
     /* 
