@@ -74,11 +74,23 @@ io.on("connection", (socket) => {
             };
         }
 
-        socket.join(tournamentId);
+       /* socket.join(tournamentId);
 
         io.to(tournamentId).emit("USER_LIST", lobby.users);
 
+        startLobbyTimer(tournamentId);*/
+
+        socket.join(tournamentId);
+
+        // user list
+        socket.emit("USER_LIST", lobby.users);
+
+        socket.emit("LOBBY_TIMER", {
+            time: lobby.lobbyTime
+        });
+
         startLobbyTimer(tournamentId);
+
     });
 
 
