@@ -143,15 +143,21 @@ io.on("connection", (socket) => {
         const expected = Object.keys(rooms[roomId]?.users || {}).length;
         const received = Object.keys(roomResults[roomId]).length;
 
-        console.log(`[ROOM RESULT] ${roomId} ${received}/${expected}`);
-
         if (expected > 0 && received === expected) {
+
             io.to(roomId).emit(
                 "TOURNAMENT_RESULT",
                 roomResults[roomId]
             );
+
+            const tournamentId = roomId.split("_ROOM_")[0];
+
+            setTimeout(() => {
+                resetTournament(tournamentId);
+            }, 2000);
         }
     });
+
 
 
     socket.on("TOURNAMENT_COIN_UPDATE", ({ username, coins }) => {
@@ -334,7 +340,7 @@ function startTournamentTimer(tournamentId) {
     }, 3000);
 }*/
 
-function resetTournament(tournamentId) {
+/*function resetTournament(tournamentId) {
     console.log("Reset tournament:", tournamentId);
 
     if (lobbies[tournamentId]?.lobbyInterval)
@@ -353,6 +359,31 @@ function resetTournament(tournamentId) {
             delete rooms[roomId];
         }
     }
+}
+*/
+
+function resetTournament(tournamentId) {
+    console.log("Reset tournament:", tournamentId);
+
+    if (lobbies[tournamentId]?.lobbyInterval)
+        clearInterval(lobbies[tournamentId].lobbyInterval);
+
+    if (tournamentTimers[tournamentId])
+        clearInterval(tournamentTimers[tournamentId]);
+
+    delete lobbies[tournamentId];
+    delete tournamentTimers[tournamentId];
+    delete tournamentState[tournamentId];
+
+    lobbyTime = LOBBY_TIME;
+
+    for (const roomId in rooms) {
+        if (roomId.startsWith(tournamentId)) {
+            delete rooms[roomId];
+        }
+    }
+
+    delete roomResults;
 }
 
 /*function checkAndSendResult(tournamentId) {
