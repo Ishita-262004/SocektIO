@@ -112,10 +112,17 @@ io.on("connection", (socket) => {
             rooms[roomId] = { users: {} };
 
         if (!rooms[roomId].users[socket.id]) {
-            rooms[roomId].users[socket.id] = {
+            /*rooms[roomId].users[socket.id] = {
                 username: userData.username,
                 avatar: userData.avatar
+            };*/
+            rooms[roomId].users[userData.username] = {
+                socketId: socket.id,
+                username: userData.username,
+                avatar: userData.avatar,
+                coins: rooms[roomId].users[userData.username]?.coins || 0
             };
+
         }
 
         socket.join(roomId);
@@ -190,13 +197,24 @@ io.on("connection", (socket) => {
 
 
 
-    socket.on("TOURNAMENT_COIN_UPDATE", ({ username, coins }) => {
+    /*socket.on("TOURNAMENT_COIN_UPDATE", ({ username, coins }) => {
         for (const roomId in rooms) {
             if (rooms[roomId].users[socket.id]) {
                 io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", { username, coins });
             }
         }
+    });*/
+    socket.on("TOURNAMENT_COIN_UPDATE", ({ roomId, username, coins }) => {
+        if (rooms[roomId]?.users[username]) {
+            rooms[roomId].users[username].coins = coins;
+
+            io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", {
+                username,
+                coins
+            });
+        }
     });
+
 
     socket.on("LEAVE_GAME", ({ roomId }) => {
         console.log("Player left game:", socket.id, "room:", roomId);
@@ -243,7 +261,7 @@ io.on("connection", (socket) => {
     });
 
     socket.on("disconnect", () => {
-        for (const tId in lobbies) {
+        /*for (const tId in lobbies) {
             const lobby = lobbies[tId];
             if (lobby.users[socket.id]) {
                 delete lobby.users[socket.id];
@@ -253,7 +271,7 @@ io.on("connection", (socket) => {
                     resetTournament(tId);
                 }
             }
-        }
+        }*/
     });
 });
 
