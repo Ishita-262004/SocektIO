@@ -96,7 +96,7 @@ io.on("connection", (socket) => {
     });
 */
 
-    socket.on("JOIN_ROOM", ({ roomId }) => {
+   /* socket.on("JOIN_ROOM", ({ roomId }) => {
         if (!roomId) return;
 
         let userData = null;
@@ -112,16 +112,11 @@ io.on("connection", (socket) => {
             rooms[roomId] = { users: {} };
 
         if (!rooms[roomId].users[socket.id]) {
-            /*rooms[roomId].users[socket.id] = {
+            rooms[roomId].users[socket.id] = {
                 username: userData.username,
                 avatar: userData.avatar
-            };*/
-            rooms[roomId].users[userData.username] = {
-                socketId: socket.id,
-                username: userData.username,
-                avatar: userData.avatar,
-                coins: rooms[roomId].users[userData.username]?.coins || 0
             };
+           
 
         }
 
@@ -130,7 +125,27 @@ io.on("connection", (socket) => {
         io.to(roomId).emit("ROOM_USERS", {
             users: rooms[roomId].users
         });
+    });*/
+    socket.on("JOIN_ROOM", ({ roomId, username }) => {
+        if (!roomId || !username) return;
+
+        if (!rooms[roomId])
+            rooms[roomId] = { users: {} };
+
+        rooms[roomId].users[username] = {
+            socketId: socket.id,
+            username,
+            avatar: rooms[roomId].users[username]?.avatar || "default_avatar",
+            coins: rooms[roomId].users[username]?.coins || 0
+        };
+
+        socket.join(roomId);
+
+        socket.emit("ROOM_USERS", {
+            users: rooms[roomId].users
+        });
     });
+
 
     /* 
     socket.on("TOURNAMENT_PLAYER_RESULT", ({ tournamentId, coins }) => {
@@ -215,6 +230,27 @@ io.on("connection", (socket) => {
         }
     });
 
+    socket.on("JOIN_TOURNAMENT", ({ tournamentId }) => {
+        if (!tournamentId) return;
+        socket.join(tournamentId);
+
+        // resend current state
+        if (tournamentState[tournamentId]) {
+            const startTime = tournamentState[tournamentId].startTime;
+            const now = Date.now();
+
+            const elapsed = Math.floor((now - startTime) / 1000);
+            const tournamentTime = Math.max(0, TOURNAMENT_TIME - elapsed);
+            const round = Math.floor(elapsed / ROUND_TIME) + 1;
+            const roundTime = Math.max(1, ROUND_TIME - (elapsed % ROUND_TIME));
+
+            socket.emit("TOURNAMENT_STATE", {
+                tournamentTime,
+                round,
+                roundTime
+            });
+        }
+    });
 
     socket.on("LEAVE_GAME", ({ roomId }) => {
         console.log("Player left game:", socket.id, "room:", roomId);
@@ -346,10 +382,18 @@ function createMatches(tournamentId) {
             s.join(roomId);
 
             // REGISTER USER IN ROOM
-            rooms[roomId].users[s.id] = {
+           /* rooms[roomId].users[s.id] = {
                 username: lobby.users[s.id].username,
                 avatar: lobby.users[s.id].avatar
+            };*/
+            const user = lobby.users[s.id];
+            rooms[roomId].users[user.username] = {
+                socketId: s.id,
+                username: user.username,
+                avatar: user.avatar,
+                coins: 0
             };
+
         });
 
         // SEND USERS TO CLIENT (THIS WAS MISSING)
