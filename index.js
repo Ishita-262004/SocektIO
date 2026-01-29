@@ -336,10 +336,10 @@ io.on("connection", (socket) => {
 });
 
 const LOBBY_TIME = 40;
-let lobbyTime = LOBBY_TIME;
-let lobbyInterval = null;
+/*let lobbyTime = LOBBY_TIME;
+let lobbyInterval = null;*/
 
-function startLobbyTimer(tournamentId) {
+/*function startLobbyTimer(tournamentId) {
     const lobby = lobbies[tournamentId];
     if (lobby.lobbyInterval) return;
 
@@ -353,6 +353,33 @@ function startLobbyTimer(tournamentId) {
             lobby.lobbyInterval = null;
             createMatches(tournamentId);
         }
+    }, 1000);
+}*/
+function startLobbyTimer(tournamentId) {
+    const lobby = lobbies[tournamentId];
+    if (!lobby) return;
+
+    if (lobby.lobbyInterval) return;
+
+    lobby.lobbyInterval = setInterval(() => {
+
+        if (!lobbies[tournamentId]) {
+            clearInterval(lobby.lobbyInterval);
+            return;
+        }
+
+        lobby.lobbyTime--;
+
+        io.to(tournamentId).emit("LOBBY_TIMER", {
+            time: Math.max(0, lobby.lobbyTime)
+        });
+
+        if (lobby.lobbyTime <= 0) {
+            clearInterval(lobby.lobbyInterval);
+            lobby.lobbyInterval = null;
+            createMatches(tournamentId);
+        }
+
     }, 1000);
 }
 
@@ -557,7 +584,7 @@ function startTournamentTimer(tournamentId) {
 }
 */
 
-function resetTournament(tournamentId) {
+/*function resetTournament(tournamentId) {
     console.log("Reset tournament:", tournamentId);
 
     if (lobbies[tournamentId]?.lobbyInterval)
@@ -584,7 +611,35 @@ function resetTournament(tournamentId) {
         }
     }
 
+}*/
+function resetTournament(tournamentId) {
+    console.log("Reset tournament:", tournamentId);
+
+    const lobby = lobbies[tournamentId];
+
+    if (lobby?.lobbyInterval)
+        clearInterval(lobby.lobbyInterval);
+
+    if (tournamentTimers[tournamentId])
+        clearInterval(tournamentTimers[tournamentId]);
+
+    delete lobbies[tournamentId];
+    delete tournamentTimers[tournamentId];
+    delete tournamentState[tournamentId];
+
+    for (const roomId in rooms) {
+        if (roomId.startsWith(tournamentId)) {
+            delete rooms[roomId];
+        }
+    }
+
+    for (const r in roomResults) {
+        if (r.startsWith(tournamentId)) {
+            delete roomResults[r];
+        }
+    }
 }
+
 
 /*function checkAndSendResult(tournamentId) {
     const receivedCount = Object.keys(
