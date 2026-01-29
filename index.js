@@ -66,14 +66,29 @@ io.on("connection", (socket) => {
 
         socket.join(roomId);
 
-        if (!rooms[roomId]) {
+       /* if (!rooms[roomId]) {
             rooms[roomId] = { users: {} };
         }
 
         rooms[roomId].users[socket.id] = {
             username: userData.username,
             avatar: userData.avatar
+        };*/
+
+        if (!rooms[roomId]) {
+            rooms[roomId] = { users: {} };
+        }
+
+        if (Object.keys(rooms[roomId].users).length >= PLAYERS_PER_MATCH) {
+            console.log("Room full:", roomId);
+            return;
+        }
+
+        rooms[roomId].users[socket.id] = {
+            username: userData.username,
+            avatar: userData.avatar
         };
+
 
         io.to(roomId).emit("ROOM_USERS", { users: rooms[roomId].users });
     });
