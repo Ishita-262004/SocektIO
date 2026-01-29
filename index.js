@@ -96,7 +96,7 @@ io.on("connection", (socket) => {
     });
 */
 
-   /* socket.on("JOIN_ROOM", ({ roomId }) => {
+    socket.on("JOIN_ROOM", ({ roomId }) => {
         if (!roomId) return;
 
         let userData = null;
@@ -116,8 +116,6 @@ io.on("connection", (socket) => {
                 username: userData.username,
                 avatar: userData.avatar
             };
-           
-
         }
 
         socket.join(roomId);
@@ -125,36 +123,7 @@ io.on("connection", (socket) => {
         io.to(roomId).emit("ROOM_USERS", {
             users: rooms[roomId].users
         });
-    });*/
-    socket.on("JOIN_TOURNAMENT", ({ tournamentId }) => {
-        if (!tournamentId) return;
-
-        socket.join(tournamentId);
-
-        // FORCE START TIMER IF NOT RUNNING
-        if (!tournamentTimers[tournamentId]) {
-            startTournamentTimer(tournamentId);
-        }
-
-        // RESEND CURRENT STATE
-        if (tournamentState[tournamentId]) {
-            const startTime = tournamentState[tournamentId].startTime;
-            const now = Date.now();
-
-            const elapsed = Math.floor((now - startTime) / 1000);
-            const tournamentTime = Math.max(0, TOURNAMENT_TIME - elapsed);
-            const round = Math.floor(elapsed / ROUND_TIME) + 1;
-            const roundTime = Math.max(1, ROUND_TIME - (elapsed % ROUND_TIME));
-
-            socket.emit("TOURNAMENT_STATE", {
-                tournamentTime,
-                round,
-                roundTime
-            });
-        }
     });
-
-
 
     /* 
     socket.on("TOURNAMENT_PLAYER_RESULT", ({ tournamentId, coins }) => {
@@ -221,43 +190,11 @@ io.on("connection", (socket) => {
 
 
 
-    /*socket.on("TOURNAMENT_COIN_UPDATE", ({ username, coins }) => {
+    socket.on("TOURNAMENT_COIN_UPDATE", ({ username, coins }) => {
         for (const roomId in rooms) {
             if (rooms[roomId].users[socket.id]) {
                 io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", { username, coins });
             }
-        }
-    });*/
-    socket.on("TOURNAMENT_COIN_UPDATE", ({ roomId, username, coins }) => {
-        if (rooms[roomId]?.users[username]) {
-            rooms[roomId].users[username].coins = coins;
-
-            io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", {
-                username,
-                coins
-            });
-        }
-    });
-
-    socket.on("JOIN_TOURNAMENT", ({ tournamentId }) => {
-        if (!tournamentId) return;
-        socket.join(tournamentId);
-
-        // resend current state
-        if (tournamentState[tournamentId]) {
-            const startTime = tournamentState[tournamentId].startTime;
-            const now = Date.now();
-
-            const elapsed = Math.floor((now - startTime) / 1000);
-            const tournamentTime = Math.max(0, TOURNAMENT_TIME - elapsed);
-            const round = Math.floor(elapsed / ROUND_TIME) + 1;
-            const roundTime = Math.max(1, ROUND_TIME - (elapsed % ROUND_TIME));
-
-            socket.emit("TOURNAMENT_STATE", {
-                tournamentTime,
-                round,
-                roundTime
-            });
         }
     });
 
@@ -306,7 +243,7 @@ io.on("connection", (socket) => {
     });
 
     socket.on("disconnect", () => {
-        /*for (const tId in lobbies) {
+        for (const tId in lobbies) {
             const lobby = lobbies[tId];
             if (lobby.users[socket.id]) {
                 delete lobby.users[socket.id];
@@ -316,7 +253,7 @@ io.on("connection", (socket) => {
                     resetTournament(tId);
                 }
             }
-        }*/
+        }
     });
 });
 
@@ -391,18 +328,10 @@ function createMatches(tournamentId) {
             s.join(roomId);
 
             // REGISTER USER IN ROOM
-           /* rooms[roomId].users[s.id] = {
+            rooms[roomId].users[s.id] = {
                 username: lobby.users[s.id].username,
                 avatar: lobby.users[s.id].avatar
-            };*/
-            const user = lobby.users[s.id];
-            rooms[roomId].users[user.username] = {
-                socketId: s.id,
-                username: user.username,
-                avatar: user.avatar,
-                coins: 0
             };
-
         });
 
         // SEND USERS TO CLIENT (THIS WAS MISSING)
