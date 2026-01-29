@@ -250,7 +250,7 @@ function startLobbyTimer(tournamentId) {
 
 const PLAYERS_PER_MATCH = 1;
 
-function createMatches(tournamentId) {
+/*function createMatches(tournamentId) {
     const lobby = lobbies[tournamentId];
     if (!lobby) return;
 
@@ -270,6 +270,48 @@ function createMatches(tournamentId) {
         io.to(roomId).emit("MATCH_FOUND", {
             roomId,
             players: group.map(s => lobbies[tournamentId].users[s.id])
+        });
+
+        startTournamentTimer(tournamentId);
+    }
+}
+*/
+function createMatches(tournamentId) {
+    const lobby = lobbies[tournamentId];
+    if (!lobby) return;
+
+    lobby.gameStarted = true;
+
+    const lobbyUsers = Object.keys(lobby.users);
+    const sockets = lobbyUsers.map(id => io.sockets.sockets.get(id));
+
+    for (let i = 0; i < sockets.length; i += PLAYERS_PER_MATCH) {
+        const group = sockets.slice(i, i + PLAYERS_PER_MATCH);
+        if (group.length < PLAYERS_PER_MATCH) break;
+
+        const roomId = tournamentId + "_ROOM_" + Date.now();
+
+        // create room
+        rooms[roomId] = { users: {} };
+
+        group.forEach(s => {
+            s.join(roomId);
+
+            // REGISTER USER IN ROOM
+            rooms[roomId].users[s.id] = {
+                username: lobby.users[s.id].username,
+                avatar: lobby.users[s.id].avatar
+            };
+        });
+
+        // SEND USERS TO CLIENT (THIS WAS MISSING)
+        io.to(roomId).emit("ROOM_USERS", {
+            users: rooms[roomId].users
+        });
+
+        io.to(roomId).emit("MATCH_FOUND", {
+            roomId,
+            players: group.map(s => lobby.users[s.id])
         });
 
         startTournamentTimer(tournamentId);
