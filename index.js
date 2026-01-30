@@ -292,20 +292,27 @@ io.on("connection", (socket) => {
         const lobby = lobbies[tournamentId];
         if (!lobby) return;
 
-        if (lobby.users[socket.id]) {
-            delete lobby.users[socket.id];
-            socket.leave(tournamentId);
+        let removed = false;
 
-            io.to(tournamentId).emit("USER_LIST", lobby.users);
-
-            console.log("User left lobby:", socket.id);
-
-            // optional: stop timer if empty
-            if (Object.keys(lobby.users).length === 0) {
-                resetTournament(tournamentId);
+        for (const username in lobby.users) {
+            if (lobby.users[username].socketId === socket.id) {
+                delete lobby.users[username];
+                removed = true;
+                break;
             }
         }
+
+        socket.leave(tournamentId);
+
+        io.to(tournamentId).emit("USER_LIST", lobby.users);
+
+        console.log("User left lobby:", socket.id);
+
+        if (Object.keys(lobby.users).length === 0) {
+            resetTournament(tournamentId);
+        }
     });
+
 
     /*socket.on("disconnect", () => {
         for (const tId in lobbies) {
