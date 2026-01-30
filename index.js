@@ -277,6 +277,9 @@ io.on("connection", (socket) => {
     socket.on("LEAVE_GAME", ({ roomId, username }) => {
         if (rooms[roomId]) {
             delete rooms[roomId].users[username];
+            if (roomIsEmpty(roomId)) {
+                console.log("Room empty:", roomId);
+            }
         }
 
         socket.leave(roomId);
@@ -477,6 +480,7 @@ const tournamentTimers = {};
 const tournamentState = {};
 
 function startTournamentTimer(tournamentId) {
+
     let lastRound = 1;
 
     // RESET state if new
@@ -500,7 +504,27 @@ function startTournamentTimer(tournamentId) {
         const elapsed = Math.floor((now - startTime) / 1000);
         const round = Math.floor(elapsed / ROUND_TIME) + 1;
         const roundTime = Math.max(1, ROUND_TIME - (elapsed % ROUND_TIME));
+        // CHECK IF ALL ROOMS OF THIS TOURNAMENT ARE EMPTY
+        let allEmpty = true;
 
+        for (const roomId in rooms) {
+            if (roomId.startsWith(tournamentId)) {
+                if (!roomIsEmpty(roomId)) {
+                    allEmpty = false;
+                    break;
+                }
+            }
+        }
+
+        if (allEmpty) {
+            console.log("Tournament empty. Ending now:", tournamentId);
+
+            io.to(tournamentId).emit("TOURNAMENT_FORCE_END");
+
+            clearInterval(tournamentTimers[tournamentId]);
+            resetTournament(tournamentId);
+            return;
+        }
         io.to(tournamentId).emit("TOURNAMENT_STATE", {
             tournamentTime,
             round,
@@ -599,6 +623,8 @@ function resetTournament(tournamentId) {
     delete tournamentTimers[tournamentId];
     delete tournamentState[tournamentId];
 
+    LOBBY_TIME = 40;
+
     for (const roomId in rooms) {
         if (roomId.startsWith(tournamentId)) {
             delete rooms[roomId];
@@ -610,6 +636,9 @@ function resetTournament(tournamentId) {
             delete roomResults[r];
         }
     }
+}
+function roomIsEmpty(roomId) {
+    return !rooms[roomId] || Object.keys(rooms[roomId].users).length === 0;
 }
 
 
