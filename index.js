@@ -76,8 +76,20 @@ io.on("connection", (socket) => {
 
         socket.join(tournamentId);
 
+       
+        for (const roomId in rooms) {
+            if (rooms[roomId].users[username]) {
+                rooms[roomId].users[username].socketId = socket.id;
+            }
+        }
+        // AUTO REJOIN ROOM
+        for (const roomId in rooms) {
+            if (rooms[roomId].users[username]) {
+                socket.join(roomId);
+                io.to(roomId).emit("ROOM_USERS", { users: rooms[roomId].users });
+            }
+        }
         io.to(tournamentId).emit("USER_LIST", lobby.users);
-
         startLobbyTimer(tournamentId);
 
     });
