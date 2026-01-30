@@ -277,9 +277,7 @@ io.on("connection", (socket) => {
     socket.on("LEAVE_GAME", ({ roomId, username }) => {
         if (rooms[roomId]) {
             delete rooms[roomId].users[username];
-            if (roomIsEmpty(roomId)) {
-                console.log("Room empty:", roomId);
-            }
+
         }
 
         socket.leave(roomId);
@@ -358,7 +356,7 @@ function startLobbyTimer(tournamentId) {
     }, 1000);
 }
 
-const PLAYERS_PER_MATCH = 2;
+const PLAYERS_PER_MATCH = 1;
 
 /*function createMatches(tournamentId) {
     const lobby = lobbies[tournamentId];
@@ -623,7 +621,6 @@ function resetTournament(tournamentId) {
     delete tournamentTimers[tournamentId];
     delete tournamentState[tournamentId];
 
-    LOBBY_TIME = 40;
 
     for (const roomId in rooms) {
         if (roomId.startsWith(tournamentId)) {
@@ -636,6 +633,15 @@ function resetTournament(tournamentId) {
             delete roomResults[r];
         }
     }
+
+    lobbies[tournamentId] = {
+        users: {},
+        lobbyTime: 40,
+        lobbyInterval: null,
+        gameStarted: false
+    };
+    console.log("New empty lobby created for:", tournamentId);
+
 }
 function roomIsEmpty(roomId) {
     return !rooms[roomId] || Object.keys(rooms[roomId].users).length === 0;
