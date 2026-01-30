@@ -305,8 +305,12 @@ io.on("connection", (socket) => {
         const lobby = lobbies[tournamentId];
         if (!lobby) return;
 
-        if (lobby.users[socket.id]) {
-            delete lobby.users[socket.id];
+        for (const username in lobby.users) {
+            if (lobby.users[username].socketId === socket.id) {
+                delete lobby.users[username];
+            }
+        }
+        
             socket.leave(tournamentId);
 
             io.to(tournamentId).emit("USER_LIST", lobby.users);
@@ -317,7 +321,7 @@ io.on("connection", (socket) => {
             if (Object.keys(lobby.users).length === 0) {
                 resetTournament(tournamentId);
             }
-        }
+        
     });
 
     /*socket.on("disconnect", () => {
