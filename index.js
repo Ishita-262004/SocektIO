@@ -363,7 +363,7 @@ function startLobbyTimer(tournamentId) {
     }, 1000);
 }
 
-const PLAYERS_PER_MATCH = 2;
+const PLAYERS_PER_MATCH = 1;
 
 /*function createMatches(tournamentId) {
     const lobby = lobbies[tournamentId];
@@ -654,7 +654,7 @@ function resetTournament(tournamentId) {
         gameStarted: false
     };
 
-    console.log("✔ NEW CLEAN LOBBY READY:", tournamentId);
+    console.log("NEW CLEAN LOBBY READY:", tournamentId);
 }
 
 function roomIsEmpty(roomId) {
