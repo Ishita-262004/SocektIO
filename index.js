@@ -192,7 +192,6 @@ io.on("connection", (socket) => {
             users: rooms[roomId].users
         });
     });
-    io.to(tournamentId).emit("RESET_TOURNAMENT_WALLET");
 
 
     /* 
@@ -674,6 +673,7 @@ function resetTournament(tournamentId) {
             delete roomResults[r];
         }
     }
+    io.to(tournamentId).emit("RESET_TOURNAMENT_WALLET");
 
     lobbies[tournamentId] = {
         users: {},
