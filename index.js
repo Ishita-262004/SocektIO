@@ -279,7 +279,7 @@ io.on("connection", (socket) => {
             delete rooms[roomId].users[username];
 
         }
-
+       
         socket.leave(roomId);
 
         io.to(roomId).emit("ROOM_USERS", {
@@ -333,12 +333,24 @@ io.on("connection", (socket) => {
 
             for (const username in lobby.users) {
                 if (lobby.users[username].socketId === socket.id) {
-                    lobby.users[username].disconnected = true;
-                    console.log("User disconnected:", username);
+
+                    // DELETE USER WHEN APP CLOSES
+                    delete lobby.users[username];
+                    console.log("User fully removed:", username);
+
+                    io.to(tId).emit("USER_LIST", lobby.users);
+
+                    // IF NO USER LEFT → RESET TOURNAMENT
+                    if (Object.keys(lobby.users).length === 0) {
+                        resetTournament(tId);
+                    }
+
+                    break;
                 }
             }
         }
     });
+
 
 });
 
