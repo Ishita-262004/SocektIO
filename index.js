@@ -156,7 +156,7 @@ io.on("connection", (socket) => {
             users: rooms[roomId].users
         });
     });*/
-    socket.on("JOIN_ROOM", ({ roomId, username }) => {
+    /*socket.on("JOIN_ROOM", ({ roomId, username }) => {
 
         if (!rooms[roomId])
             rooms[roomId] = { users: {} };
@@ -172,6 +172,27 @@ io.on("connection", (socket) => {
             users: rooms[roomId].users
         });
     });
+*/
+    socket.on("JOIN_ROOM", ({ roomId, username }) => {
+
+        if (!rooms[roomId])
+            rooms[roomId] = { users: {} };
+
+        rooms[roomId].users[username] = {
+            username,
+            avatar: lobbies[tournamentId]?.users[username]?.avatar || "",
+            socketId: socket.id,
+            coins: 0,
+            score: 0
+        };
+
+        socket.join(roomId);
+
+        io.to(roomId).emit("ROOM_USERS", {
+            users: rooms[roomId].users
+        });
+    });
+    io.to(tournamentId).emit("RESET_TOURNAMENT_WALLET");
 
 
     /* 
@@ -228,7 +249,8 @@ io.on("connection", (socket) => {
                 "TOURNAMENT_RESULT",
                 roomResults[roomId]
             );
-
+            delete rooms[roomId];
+            delete roomResults[roomId];
             const tournamentId = roomId.split("_ROOM_")[0];
 
             setTimeout(() => {
