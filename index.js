@@ -156,7 +156,7 @@ io.on("connection", (socket) => {
             users: rooms[roomId].users
         });
     });*/
-    /*socket.on("JOIN_ROOM", ({ roomId, username }) => {
+    socket.on("JOIN_ROOM", ({ roomId, username }) => {
 
         if (!rooms[roomId])
             rooms[roomId] = { users: {} };
@@ -164,26 +164,6 @@ io.on("connection", (socket) => {
         rooms[roomId].users[username] = {
             ...rooms[roomId].users[username],
             socketId: socket.id
-        };
-
-        socket.join(roomId);
-
-        io.to(roomId).emit("ROOM_USERS", {
-            users: rooms[roomId].users
-        });
-    });
-*/
-    socket.on("JOIN_ROOM", ({ roomId, username }) => {
-
-        if (!rooms[roomId])
-            rooms[roomId] = { users: {} };
-
-        rooms[roomId].users[username] = {
-            username,
-            avatar: lobbies[tournamentId]?.users[username]?.avatar || "",
-            socketId: socket.id,
-            coins: 0,
-            score: 0
         };
 
         socket.join(roomId);
@@ -248,8 +228,7 @@ io.on("connection", (socket) => {
                 "TOURNAMENT_RESULT",
                 roomResults[roomId]
             );
-            delete rooms[roomId];
-            delete roomResults[roomId];
+
             const tournamentId = roomId.split("_ROOM_")[0];
 
             setTimeout(() => {
@@ -348,29 +327,29 @@ io.on("connection", (socket) => {
             }
         }
     });*/
-    socket.on("disconnect", () => {
-        for (const tId in lobbies) {
-            const lobby = lobbies[tId];
+   socket.on("disconnect", () => {
+    for (const tId in lobbies) {
+        const lobby = lobbies[tId];
 
-            for (const username in lobby.users) {
-                if (lobby.users[username].socketId === socket.id) {
+        for (const username in lobby.users) {
+            if (lobby.users[username].socketId === socket.id) {
 
-                    // DELETE USER WHEN APP CLOSES
-                    delete lobby.users[username];
-                    console.log("User fully removed:", username);
+                // DELETE USER WHEN APP CLOSES
+                delete lobby.users[username];
+                console.log("User fully removed:", username);
 
-                    io.to(tId).emit("USER_LIST", lobby.users);
+                io.to(tId).emit("USER_LIST", lobby.users);
 
-                    // IF NO USER LEFT → RESET TOURNAMENT
-                    if (Object.keys(lobby.users).length === 0) {
-                        resetTournament(tId);
-                    }
-
-                    break;
+                // IF NO USER LEFT → RESET TOURNAMENT
+                if (Object.keys(lobby.users).length === 0) {
+                    resetTournament(tId);
                 }
+
+                break;
             }
         }
-    });
+    }
+});
 
 
 });
@@ -673,7 +652,6 @@ function resetTournament(tournamentId) {
             delete roomResults[r];
         }
     }
-    io.to(tournamentId).emit("RESET_TOURNAMENT_WALLET");
 
     lobbies[tournamentId] = {
         users: {},
