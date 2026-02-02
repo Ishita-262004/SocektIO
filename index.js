@@ -628,46 +628,40 @@ function startTournamentTimer(tournamentId) {
 function resetTournament(tournamentId) {
     console.log("Reset tournament:", tournamentId);
 
-    // STOP timers
-    if (lobbies[tournamentId]?.lobbyInterval)
-        clearInterval(lobbies[tournamentId].lobbyInterval);
+    const lobby = lobbies[tournamentId];
+
+    if (lobby?.lobbyInterval)
+        clearInterval(lobby.lobbyInterval);
 
     if (tournamentTimers[tournamentId])
         clearInterval(tournamentTimers[tournamentId]);
 
-    // DELETE everything old
     delete lobbies[tournamentId];
     delete tournamentTimers[tournamentId];
     delete tournamentState[tournamentId];
-    delete tournamentResults[tournamentId];
 
-    // DELETE rooms
+
     for (const roomId in rooms) {
         if (roomId.startsWith(tournamentId)) {
             delete rooms[roomId];
         }
     }
 
-    // DELETE room results
     for (const r in roomResults) {
         if (r.startsWith(tournamentId)) {
             delete roomResults[r];
         }
     }
 
-    console.log("Old tournament fully cleared.");
-
-    // CREATE FRESH EMPTY LOBBY
     lobbies[tournamentId] = {
         users: {},
         lobbyTime: 40,
         lobbyInterval: null,
         gameStarted: false
     };
+    console.log("New empty lobby created for:", tournamentId);
 
-    console.log("New empty lobby created:", tournamentId);
 }
-
 function roomIsEmpty(roomId) {
     return !rooms[roomId] || Object.keys(rooms[roomId].users).length === 0;
 }
