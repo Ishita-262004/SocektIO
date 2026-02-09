@@ -310,10 +310,6 @@ function createMatches(tournamentId) {
     lobby.gameStarted = true;
 
     const usernames = Object.keys(lobby.users);
-    if (usernames.length < 2) {
-        console.log("Not enough players to start");
-        return;
-    }
 
     // ⭐ CREATE ONLY ONE ROOM
     const roomId = tournamentId + "_ROOM_1";
