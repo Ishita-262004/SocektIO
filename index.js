@@ -29,11 +29,31 @@ io.on("connection", (socket) => {
                 users: {},
                 lobbyTime: LOBBY_TIME,
                 lobbyInterval: null,
-                gameStarted: false
+                gameStarted: false,
+                waitingUsers: {}
             };
         }
 
         const lobby = lobbies[tournamentId];
+        // If tournament already started → move new players into waiting list
+        if (lobby.gameStarted === true) {
+
+            lobby.waitingUsers[username] = {
+                username,
+                avatar,
+                socketId: socket.id
+            };
+
+            socket.join(tournamentId);
+
+            socket.emit("WAITING_STATE", {
+                msg: "Tournament in progress. You will enter next round."
+            });
+
+            console.log(username, "joined waiting list");
+
+            return; // VERY IMPORTANT — do not add to lobby.users
+        }
 
         if (lobby.users[username]) {
             lobby.users[username].socketId = socket.id;
@@ -311,6 +331,19 @@ function startTournamentTimer(tournamentId) {
         if (round !== lastRound) {
             io.to(tournamentId).emit("ROUND_ENDED", { round: lastRound });
             lastRound = round;
+        }
+        // ⭐ MOVE WAITING USERS INTO TOURNAMENT LOBBY FOR NEXT ROUND
+        const lobby = lobbies[tournamentId];
+
+        if (lobby && Object.keys(lobby.waitingUsers).length > 0) {
+            for (const user in lobby.waitingUsers) {
+                lobby.users[user] = lobby.waitingUsers[user];
+            }
+
+            lobby.waitingUsers = {}; // clear waiting list
+
+            io.to(tournamentId).emit("USER_LIST", lobby.users);
+            console.log("Waiting users moved into tournament:", Object.keys(lobby.users));
         }
 
         if (tournamentTime <= 0) {
