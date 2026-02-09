@@ -111,16 +111,12 @@ io.on("connection", (socket) => {
 
 
 
-    socket.on("TOURNAMENT_COIN_UPDATE", ({ username, coins }) => {
-        for (const roomId in rooms) {
-            // if (rooms[roomId].users[socket.id])
-            if (rooms[roomId].users[username])
-
-            {
-                io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", { username, coins });
-            }
+    socket.on("TOURNAMENT_COIN_UPDATE", ({ username, roomId, coins }) => {
+        if (rooms[roomId] && rooms[roomId].users[username]) {
+            io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", { username, coins });
         }
     });
+
 
     socket.on("LEAVE_GAME", ({ roomId, username }) => {
         if (rooms[roomId]) {
