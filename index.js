@@ -46,14 +46,20 @@ io.on("connection", (socket) => {
 
             socket.join(tournamentId);
 
+            io.to(tournamentId).emit("USER_LIST", {
+                ...lobby.users,
+                ...lobby.waitingUsers
+            });
+
             socket.emit("WAITING_STATE", {
                 msg: "Tournament in progress. You will enter next round."
             });
 
             console.log(username, "joined waiting list");
 
-            return; // VERY IMPORTANT — do not add to lobby.users
+            return;
         }
+
 
         if (lobby.users[username]) {
             lobby.users[username].socketId = socket.id;
