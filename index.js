@@ -252,7 +252,9 @@ function createMatches(tournamentId) {
                 username: user.username,
                 avatar: user.avatar,
                 socketId: user.socketId
-            };
+                };
+
+                delete lobby.users[username];
         });
 
         // SEND ROOM USERS
@@ -268,6 +270,7 @@ function createMatches(tournamentId) {
 
         startTournamentTimer(tournamentId);
     }
+    io.to(tournamentId).emit("USER_LIST", lobby.users);
 }
 
 
