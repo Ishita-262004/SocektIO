@@ -222,7 +222,7 @@ function startLobbyTimer(tournamentId) {
     }, 1000);
 }
 
-const PLAYERS_PER_MATCH = 1;
+//const PLAYERS_PER_MATCH = 1;
 
 function createMatches(tournamentId) {
     const lobby = lobbies[tournamentId];
@@ -232,9 +232,9 @@ function createMatches(tournamentId) {
 
     const usernames = Object.keys(lobby.users);
 
-    for (let i = 0; i < usernames.length; i += PLAYERS_PER_MATCH) {
-        const group = usernames.slice(i, i + PLAYERS_PER_MATCH);
-        if (group.length < PLAYERS_PER_MATCH) break;
+    for (let i = 0; i < usernames.length; i++ /*+= PLAYERS_PER_MATCH*/) {
+        const group = usernames.slice(i, /*i + PLAYERS_PER_MATCH*/);
+      //  if (group.length < PLAYERS_PER_MATCH) break;
 
         const roomId = tournamentId + "_ROOM_" + Date.now();
 
