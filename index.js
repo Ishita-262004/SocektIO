@@ -30,7 +30,8 @@ io.on("connection", (socket) => {
                 lobbyTime: LOBBY_TIME,
                 lobbyInterval: null,
                 gameStarted: false,
-                waitingUsers: {}
+                waitingUsers: {},
+                roundProcessed: {}
             };
         }
 
@@ -76,7 +77,12 @@ io.on("connection", (socket) => {
         }
 
         socket.join(tournamentId);
-        io.to(tournamentId).emit("USER_LIST", lobby.users);
+       // io.to(tournamentId).emit("USER_LIST", lobby.users);
+        io.to(tournamentId).emit("USER_LIST", {
+            ...lobby.users,
+            ...lobby.waitingUsers
+        });
+
         startLobbyTimer(tournamentId);
 
     });
@@ -84,7 +90,12 @@ io.on("connection", (socket) => {
 
     socket.on("GET_LOBBY_USERS", ({ tournamentId }) => {
         if (!lobbies[tournamentId]) return;
-        socket.emit("USER_LIST", lobbies[tournamentId].users);
+       // socket.emit("USER_LIST", lobbies[tournamentId].users);
+        socket.emit("USER_LIST", {
+            ...lobby.users,
+            ...lobby.waitingUsers
+        });
+
     });
 
     socket.on("JOIN_ROOM", ({ roomId, username }) => {
@@ -199,7 +210,13 @@ io.on("connection", (socket) => {
 
         socket.leave(tournamentId);
 
-        io.to(tournamentId).emit("USER_LIST", lobby.users);
+       // io.to(tournamentId).emit("USER_LIST", lobby.users);
+
+        io.to(tournamentId).emit("USER_LIST", {
+            ...lobby.users,
+            ...lobby.waitingUsers
+        });
+
 
         console.log("User left lobby:", socket.id);
 
@@ -345,7 +362,11 @@ function createMatches(tournamentId) {
     // ⭐ Clear lobby players (but after MATCH_FOUND)
     lobby.users = {};
 
-    io.to(tournamentId).emit("USER_LIST", lobby.users);
+    io.to(tournamentId).emit("USER_LIST", {
+        ...lobby.users,
+        ...lobby.waitingUsers
+    });
+
 
     startTournamentTimer(tournamentId);
 }
@@ -386,10 +407,10 @@ function startTournamentTimer(tournamentId) {
             roundTime
         });
 
-        // ⭐ NEW USERS ENTER ONLY WHEN NEW ROUND STARTS
-        if (round !== lastRound) {
+        if (round !== lastRound && !lobby.roundProcessed[round]) {
 
             lastRound = round;
+            lobby.roundProcessed[round] = true;  // ⭐ PREVENT DOUBLE TRIGGER
 
             if (Object.keys(lobby.waitingUsers).length > 0) {
 
@@ -401,12 +422,15 @@ function startTournamentTimer(tournamentId) {
 
                 lobby.waitingUsers = {};
 
-                io.to(tournamentId).emit("USER_LIST", lobby.users);
+              //  io.to(tournamentId).emit("USER_LIST", lobby.users);
+                io.to(tournamentId).emit("USER_LIST", {
+                    ...lobby.users,
+                    ...lobby.waitingUsers
+                });
 
                 console.log("New users joined at start of round:", round);
             }
         }
-
 
         // END OF TOURNAMENT
         if (tournamentTime <= 0) {
