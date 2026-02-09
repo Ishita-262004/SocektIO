@@ -267,10 +267,13 @@ function createMatches(tournamentId) {
         const group = usernames.slice(i, /*i + PLAYERS_PER_MATCH*/);
       //  if (group.length < PLAYERS_PER_MATCH) break;
 
-        const roomId = tournamentId + "_ROOM_" + Date.now();
+        if (!lobby.currentRoomId) {
+            lobby.currentRoomId = tournamentId + "_ROOM_1";
+            rooms[lobby.currentRoomId] = { users: {} };
+        }
 
-        rooms[roomId] = { users: {} };
-        lobby.currentRoomId = roomId;
+        const roomId = lobby.currentRoomId;
+
        // group.forEach(username =>
             usernames.forEach(username => {
             const user = lobby.users[username];
@@ -285,7 +288,6 @@ function createMatches(tournamentId) {
                 socketId: user.socketId
                 };
 
-                delete lobby.users[username];
         });
 
         // SEND ROOM USERS
@@ -293,11 +295,21 @@ function createMatches(tournamentId) {
             users: rooms[roomId].users
         });
 
-        // SEND MATCH FOUND
+        /*// SEND MATCH FOUND
         io.to(roomId).emit("MATCH_FOUND", {
             roomId,
             players: group.map(u => lobby.users[u])
+        });*/
+
+        io.to(roomId).emit("MATCH_FOUND", {
+            roomId,
+            players: Object.values(rooms[roomId].users)
         });
+
+        // NOW delete users from lobby AFTER sending to Unity
+        for (const username of usernames) {
+            delete lobby.users[username];
+        }
 
         startTournamentTimer(tournamentId);
     }
