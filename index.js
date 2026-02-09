@@ -140,9 +140,25 @@ io.on("connection", (socket) => {
 
     socket.on("TOURNAMENT_COIN_UPDATE", ({ username, roomId, coins }) => {
         if (rooms[roomId] && rooms[roomId].users[username]) {
+
+            // SEND TO ALL ROOM PLAYERS
             io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", { username, coins });
+
+            // ALSO SEND TO ALL WAITING USERS
+            const tournamentId = roomId.split("_ROOM_")[0];
+            const lobby = lobbies[tournamentId];
+
+            if (lobby && lobby.waitingUsers) {
+                for (const wUser in lobby.waitingUsers) {
+                    const s = io.sockets.sockets.get(lobby.waitingUsers[wUser].socketId);
+                    if (s) {
+                        s.emit("TOURNAMENT_COIN_UPDATE", { username, coins });
+                    }
+                }
+            }
         }
     });
+
 
 
     socket.on("LEAVE_GAME", ({ roomId, username }) => {
