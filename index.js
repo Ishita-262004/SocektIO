@@ -345,6 +345,23 @@ function startTournamentTimer(tournamentId) {
             io.to(tournamentId).emit("USER_LIST", lobby.users);
             console.log("Waiting users moved into tournament:", Object.keys(lobby.users));
         }
+        // CREATE MATCHES FOR ONLY NEW USERS
+        if (lobby) {
+            const newUsers = Object.keys(lobby.waitingUsers);
+            if (newUsers.length > 0) {
+
+                const tempLobby = { users: {} };
+
+                // only new users in temp
+                newUsers.forEach(u => {
+                    tempLobby.users[u] = lobby.users[u];
+                });
+
+                // call match creator only for new users
+                createMatchesForNewUsers(tournamentId, tempLobby.users);
+            }
+        }
+
 
         if (tournamentTime <= 0) {
             clearInterval(tournamentTimers[tournamentId]);
@@ -353,6 +370,34 @@ function startTournamentTimer(tournamentId) {
     }, 1000);
 }
 
+function createMatchesForNewUsers(tournamentId, newUsers) {
+
+    const usernames = Object.keys(newUsers);
+
+    usernames.forEach(username => {
+        const roomId = tournamentId + "_ROOM_" + Date.now() + "_" + username;
+
+        rooms[roomId] = { users: {} };
+
+        const user = newUsers[username];
+        const s = io.sockets.sockets.get(user.socketId);
+        if (!s) return;
+
+        s.join(roomId);
+
+        rooms[roomId].users[username] = {
+            username: user.username,
+            avatar: user.avatar,
+            socketId: user.socketId
+        };
+
+        io.to(roomId).emit("ROOM_USERS", { users: rooms[roomId].users });
+        io.to(roomId).emit("MATCH_FOUND", {
+            roomId,
+            players: [user]
+        });
+    });
+}
 
 function resetTournament(tournamentId) {
     console.log("Reset tournament:", tournamentId);
