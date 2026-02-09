@@ -364,8 +364,10 @@ function createMatches(tournamentId) {
         ...lobby.waitingUsers
     });
 
-    // ⭐ Clear lobby players (but after MATCH_FOUND)
-    lobby.users = {};
+    setTimeout(() => {
+        lobby.users = {};
+    }, 100); // delay only 100 ms so MATCH_FOUND goes out safely
+
 
     startTournamentTimer(tournamentId);
 }
@@ -469,6 +471,15 @@ function createMatchesForNewUsers(tournamentId, newUsers) {
         roomId,
         players: Object.values(rooms[roomId].users)
     });
+
+    if (roomResults[roomId]) {
+        for (const user in roomResults[roomId]) {
+            const coins = roomResults[roomId][user];
+            // Send to EVERYONE
+            io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", { username: user, coins });
+        }
+    }
+
 }
 
 
