@@ -109,12 +109,12 @@ io.on("connection", (socket) => {
         });
 
         for (const user in roomResults[roomId]) {
-            const coins = roomResults[roomId][user];
-            socket.emit("TOURNAMENT_COIN_UPDATE", {
-                username: user,
-                coins: coins
-            });
-        }
+        const coins = roomResults[roomId][user];
+        socket.emit("TOURNAMENT_COIN_UPDATE", {
+            username: user,
+            coins: coins
+        });
+    }
     });
 
 
@@ -267,13 +267,10 @@ function createMatches(tournamentId) {
         const group = usernames.slice(i, /*i + PLAYERS_PER_MATCH*/);
       //  if (group.length < PLAYERS_PER_MATCH) break;
 
-        if (!lobby.currentRoomId) {
-            lobby.currentRoomId = tournamentId + "_ROOM_1";
-            rooms[lobby.currentRoomId] = { users: {} };
-        }
+        const roomId = tournamentId + "_ROOM_" + Date.now();
 
-        const roomId = lobby.currentRoomId;
-
+        rooms[roomId] = { users: {} };
+        lobby.currentRoomId = roomId;
        // group.forEach(username =>
             usernames.forEach(username => {
             const user = lobby.users[username];
@@ -288,6 +285,7 @@ function createMatches(tournamentId) {
                 socketId: user.socketId
                 };
 
+                delete lobby.users[username];
         });
 
         // SEND ROOM USERS
@@ -295,21 +293,11 @@ function createMatches(tournamentId) {
             users: rooms[roomId].users
         });
 
-        /*// SEND MATCH FOUND
+        // SEND MATCH FOUND
         io.to(roomId).emit("MATCH_FOUND", {
             roomId,
             players: group.map(u => lobby.users[u])
-        });*/
-
-        io.to(roomId).emit("MATCH_FOUND", {
-            roomId,
-            players: Object.values(rooms[roomId].users)
         });
-
-        // NOW delete users from lobby AFTER sending to Unity
-        for (const username of usernames) {
-            delete lobby.users[username];
-        }
 
         startTournamentTimer(tournamentId);
     }
