@@ -239,8 +239,9 @@ function createMatches(tournamentId) {
         const roomId = tournamentId + "_ROOM_" + Date.now();
 
         rooms[roomId] = { users: {} };
-
-        group.forEach(username => {
+        lobby.currentRoomId = roomId;
+       // group.forEach(username =>
+            usernames.forEach(username => {
             const user = lobby.users[username];
             const s = io.sockets.sockets.get(user.socketId);
             if (!s) return;
@@ -336,32 +337,35 @@ function startTournamentTimer(tournamentId) {
 
 function createMatchesForNewUsers(tournamentId, newUsers) {
 
-    const usernames = Object.keys(newUsers);
+    const lobby = lobbies[tournamentId];
+    if (!lobby || !lobby.currentRoomId) return;
 
-    usernames.forEach(username => {
-        const roomId = tournamentId + "_ROOM_" + Date.now() + "_" + username;
+    const roomId = lobby.currentRoomId;  // ⭐ USE SAME ROOM
 
-        rooms[roomId] = { users: {} };
-
+    for (const username in newUsers) {
         const user = newUsers[username];
         const s = io.sockets.sockets.get(user.socketId);
-        if (!s) return;
+        if (!s) continue;
 
-        s.join(roomId);
+        s.join(roomId); // ⭐ JOIN SAME ROOM
 
         rooms[roomId].users[username] = {
             username: user.username,
             avatar: user.avatar,
             socketId: user.socketId
         };
+    }
 
-        io.to(roomId).emit("ROOM_USERS", { users: rooms[roomId].users });
-        io.to(roomId).emit("MATCH_FOUND", {
-            roomId,
-            players: [user]
-        });
+    io.to(roomId).emit("ROOM_USERS", {
+        users: rooms[roomId].users
+    });
+
+    io.to(roomId).emit("MATCH_FOUND", {
+        roomId,
+        players: Object.values(rooms[roomId].users)
     });
 }
+
 
 function resetTournament(tournamentId) {
     console.log("Reset tournament:", tournamentId);
