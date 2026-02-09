@@ -15,9 +15,9 @@ const lobbies = {
     // }
 };
 
-const tournamentResults = {};
+
 const roomResults = {};
-const liveCoins = {};   // <--- ADD THIS TOP LEVEL
+const liveCoins = {};   
 
 
 io.on("connection", (socket) => {
@@ -192,11 +192,9 @@ io.on("connection", (socket) => {
 
 
     socket.on("LEAVE_GAME", ({ roomId, username }) => {
-        if (rooms[roomId]) {
-            delete rooms[roomId].users[username];
 
-        }
-       
+        removeUserEverywhere(username, socket.id);
+
         socket.leave(roomId);
 
         io.to(roomId).emit("ROOM_USERS", {
@@ -205,59 +203,26 @@ io.on("connection", (socket) => {
     });
 
 
+
     socket.on("LEAVE_LOBBY", ({ tournamentId }) => {
-        const lobby = lobbies[tournamentId];
-        if (!lobby) return;
 
-        let removed = false;
-
-        for (const username in lobby.users) {
-            if (lobby.users[username].socketId === socket.id) {
-                delete lobby.users[username];
-                removed = true;
-                break;
-            }
-        }
+        removeUserEverywhere(username, socket.id);
 
         socket.leave(tournamentId);
-
-       // io.to(tournamentId).emit("USER_LIST", lobby.users);
 
         io.to(tournamentId).emit("USER_LIST", {
             ...lobby.users,
             ...lobby.waitingUsers
         });
-
-
-        console.log("User left lobby:", socket.id);
-
-        if (Object.keys(lobby.users).length === 0) {
-            resetTournament(tournamentId);
-        }
     });
 
+
     socket.on("disconnect", () => {
-        for (const tId in lobbies) {
-            const lobby = lobbies[tId];
 
-            for (const username in lobby.users) {
-                if (lobby.users[username].socketId === socket.id) {
+        removeUserEverywhere(null, socket.id);
 
-                    // DELETE USER WHEN APP CLOSES
-                    delete lobby.users[username];
-                    console.log("User fully removed:", username);
+        console.log("User fully removed", socket.id);
 
-                    io.to(tId).emit("USER_LIST", lobby.users);
-
-                    // IF NO USER LEFT → RESET TOURNAMENT
-                    if (Object.keys(lobby.users).length === 0) {
-                        resetTournament(tId);
-                    }
-
-                    break;
-                }
-            }
-        }
     });
 
 });
@@ -521,6 +486,30 @@ function resetTournament(tournamentId) {
     console.log("New empty lobby created for:", tournamentId);
 
 }
+
+function removeUserEverywhere(username, socketId) {
+    // Remove from lobby & waiting list
+    for (const tId in lobbies) {
+        const lobby = lobbies[tId];
+
+        if (lobby.users[username]) delete lobby.users[username];
+        if (lobby.waitingUsers[username]) delete lobby.waitingUsers[username];
+    }
+
+    // Remove from rooms
+    for (const roomId in rooms) {
+        if (rooms[roomId].users[username]) {
+            delete rooms[roomId].users[username];
+        }
+        if (liveCoins[roomId] && liveCoins[roomId][username]) {
+            delete liveCoins[roomId][username];
+        }
+        if (roomResults[roomId] && roomResults[roomId][username]) {
+            delete roomResults[roomId][username];
+        }
+    }
+}
+
 function roomIsEmpty(roomId) {
     return !rooms[roomId] || Object.keys(rooms[roomId].users).length === 0;
 }
