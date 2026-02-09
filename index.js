@@ -89,14 +89,15 @@ io.on("connection", (socket) => {
 
 
     socket.on("GET_LOBBY_USERS", ({ tournamentId }) => {
-        if (!lobbies[tournamentId]) return;
-       // socket.emit("USER_LIST", lobbies[tournamentId].users);
+        const lobby = lobbies[tournamentId];
+        if (!lobby) return;
+
         socket.emit("USER_LIST", {
             ...lobby.users,
             ...lobby.waitingUsers
         });
-
     });
+
 
     socket.on("JOIN_ROOM", ({ roomId, username }) => {
 
@@ -357,14 +358,14 @@ function createMatches(tournamentId) {
         players: Object.values(rooms[roomId].users)
     });
 
-    // ⭐ Clear lobby players (but after MATCH_FOUND)
-    lobby.users = {};
-
+   
     io.to(tournamentId).emit("USER_LIST", {
         ...lobby.users,
         ...lobby.waitingUsers
     });
 
+    // ⭐ Clear lobby players (but after MATCH_FOUND)
+    lobby.users = {};
 
     startTournamentTimer(tournamentId);
 }
