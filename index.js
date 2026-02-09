@@ -107,6 +107,14 @@ io.on("connection", (socket) => {
         io.to(roomId).emit("ROOM_USERS", {
             users: rooms[roomId].users
         });
+
+        for (const user in roomResults[roomId]) {
+            const coins = roomResults[roomId][user];
+            socket.emit("TOURNAMENT_COIN_UPDATE", {
+                username: user,
+                coins: coins
+            });
+        }
     });
 
 
