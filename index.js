@@ -17,6 +17,7 @@ const lobbies = {
 
 const tournamentResults = {};
 const roomResults = {};
+const liveCoins = {};   // <--- ADD THIS TOP LEVEL
 
 
 io.on("connection", (socket) => {
@@ -111,7 +112,9 @@ io.on("connection", (socket) => {
         // FULL FIX: CLEAR OLD RESULTS WHEN USER ENTERS ROOM AGAIN
         if (!roomResults[roomId])
             roomResults[roomId] = {};
-      
+
+        if (!liveCoins[roomId])
+            liveCoins[roomId] = {};
 
         socket.join(roomId);
 
@@ -119,12 +122,20 @@ io.on("connection", (socket) => {
             users: rooms[roomId].users
         });
 
+        for (const user in liveCoins[roomId]) {
+            socket.emit("TOURNAMENT_COIN_UPDATE", {
+                username: user,
+                coins: liveCoins[roomId][user]
+            });
+        }
+
         for (const user in roomResults[roomId]) {
             socket.emit("TOURNAMENT_COIN_UPDATE", {
                 username: user,
                 coins: roomResults[roomId][user]
             });
         }
+
     });
 
 
@@ -157,21 +168,22 @@ io.on("connection", (socket) => {
 
 
     socket.on("TOURNAMENT_COIN_UPDATE", ({ username, roomId, coins }) => {
-        if (rooms[roomId] && rooms[roomId].users[username]) {
 
-            // SEND TO ALL ROOM PLAYERS
-            io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", { username, coins });
+        if (!liveCoins[roomId]) liveCoins[roomId] = {};
+        liveCoins[roomId][username] = coins;   // ⭐ STORE LIVE COINS
 
-            // ALSO SEND TO ALL WAITING USERS
-            const tournamentId = roomId.split("_ROOM_")[0];
-            const lobby = lobbies[tournamentId];
+        // SEND TO ALL players in room
+        io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", { username, coins });
 
-            if (lobby && lobby.waitingUsers) {
-                for (const wUser in lobby.waitingUsers) {
-                    const s = io.sockets.sockets.get(lobby.waitingUsers[wUser].socketId);
-                    if (s) {
-                        s.emit("TOURNAMENT_COIN_UPDATE", { username, coins });
-                    }
+        // Also send to waiting users
+        const tournamentId = roomId.split("_ROOM_")[0];
+        const lobby = lobbies[tournamentId];
+
+        if (lobby && lobby.waitingUsers) {
+            for (const wUser in lobby.waitingUsers) {
+                const s = io.sockets.sockets.get(lobby.waitingUsers[wUser].socketId);
+                if (s) {
+                    s.emit("TOURNAMENT_COIN_UPDATE", { username, coins });
                 }
             }
         }
@@ -364,6 +376,9 @@ function createMatches(tournamentId) {
         ...lobby.waitingUsers
     });
 
+    // ⭐ Clear lobby players (but after MATCH_FOUND)
+    lobby.users = {};
+
     startTournamentTimer(tournamentId);
 }
 
@@ -442,14 +457,14 @@ function createMatchesForNewUsers(tournamentId, newUsers) {
     const lobby = lobbies[tournamentId];
     if (!lobby || !lobby.currentRoomId) return;
 
-    const roomId = lobby.currentRoomId;
+    const roomId = lobby.currentRoomId;  // ⭐ USE SAME ROOM
 
     for (const username in newUsers) {
         const user = newUsers[username];
         const s = io.sockets.sockets.get(user.socketId);
         if (!s) continue;
 
-        s.join(roomId);
+        s.join(roomId); // ⭐ JOIN SAME ROOM
 
         rooms[roomId].users[username] = {
             username: user.username,
@@ -458,20 +473,15 @@ function createMatchesForNewUsers(tournamentId, newUsers) {
         };
     }
 
-    // Update room users for everyone
     io.to(roomId).emit("ROOM_USERS", {
         users: rooms[roomId].users
     });
 
-    // ⭐ ONLY SEND COIN UPDATES — NOT MATCH_FOUND
-    if (roomResults[roomId]) {
-        for (const user in roomResults[roomId]) {
-            const coins = roomResults[roomId][user];
-            io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", { username: user, coins });
-        }
-    }
+    io.to(roomId).emit("MATCH_FOUND", {
+        roomId,
+        players: Object.values(rooms[roomId].users)
+    });
 }
-
 
 
 function resetTournament(tournamentId) {
