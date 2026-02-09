@@ -36,7 +36,7 @@ io.on("connection", (socket) => {
 
         const lobby = lobbies[tournamentId];
         // If tournament already started → move new players into waiting list
-        if (lobby.gameStarted === true) {
+                if (lobby.gameStarted === true) {
 
             lobby.waitingUsers[username] = {
                 username,
@@ -58,7 +58,7 @@ io.on("connection", (socket) => {
 
             console.log(username, "joined waiting list");
 
-            return;
+            return; 
         }
 
 
@@ -103,21 +103,10 @@ io.on("connection", (socket) => {
             delete roomResults[roomId][username];
 
         socket.join(roomId);
+
         io.to(roomId).emit("ROOM_USERS", {
             users: rooms[roomId].users
         });
-
-        // ⭐ Send existing scores to the new user
-        if (roomResults[roomId]) {
-            for (const player in roomResults[roomId]) {
-                socket.emit("TOURNAMENT_COIN_UPDATE", {
-                    username: player,
-                    coins: roomResults[roomId][player]
-                });
-            }
-        }
-
-       
     });
 
 
