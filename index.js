@@ -447,14 +447,14 @@ function createMatchesForNewUsers(tournamentId, newUsers) {
     const lobby = lobbies[tournamentId];
     if (!lobby || !lobby.currentRoomId) return;
 
-    const roomId = lobby.currentRoomId;  // ⭐ USE SAME ROOM
+    const roomId = lobby.currentRoomId;
 
     for (const username in newUsers) {
         const user = newUsers[username];
         const s = io.sockets.sockets.get(user.socketId);
         if (!s) continue;
 
-        s.join(roomId); // ⭐ JOIN SAME ROOM
+        s.join(roomId);
 
         rooms[roomId].users[username] = {
             username: user.username,
@@ -463,24 +463,20 @@ function createMatchesForNewUsers(tournamentId, newUsers) {
         };
     }
 
+    // Update room users for everyone
     io.to(roomId).emit("ROOM_USERS", {
         users: rooms[roomId].users
     });
 
-    io.to(roomId).emit("MATCH_FOUND", {
-        roomId,
-        players: Object.values(rooms[roomId].users)
-    });
-
+    // ⭐ ONLY SEND COIN UPDATES — NOT MATCH_FOUND
     if (roomResults[roomId]) {
         for (const user in roomResults[roomId]) {
             const coins = roomResults[roomId][user];
-            // Send to EVERYONE
             io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", { username: user, coins });
         }
     }
-
 }
+
 
 
 function resetTournament(tournamentId) {
