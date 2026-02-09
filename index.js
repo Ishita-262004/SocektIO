@@ -110,8 +110,7 @@ io.on("connection", (socket) => {
         // FULL FIX: CLEAR OLD RESULTS WHEN USER ENTERS ROOM AGAIN
         if (!roomResults[roomId])
             roomResults[roomId] = {};
-        else
-            delete roomResults[roomId][username];
+      
 
         socket.join(roomId);
 
@@ -120,12 +119,11 @@ io.on("connection", (socket) => {
         });
 
         for (const user in roomResults[roomId]) {
-        const coins = roomResults[roomId][user];
-        socket.emit("TOURNAMENT_COIN_UPDATE", {
-            username: user,
-            coins: coins
-        });
-    }
+            socket.emit("TOURNAMENT_COIN_UPDATE", {
+                username: user,
+                coins: roomResults[roomId][user]
+            });
+        }
     });
 
 
