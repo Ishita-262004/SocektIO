@@ -260,7 +260,7 @@ function createMatches(tournamentId) {
                 socketId: user.socketId
                 };
 
-               // delete lobby.users[username];
+                delete lobby.users[username];
         });
 
         // SEND ROOM USERS
@@ -351,47 +351,31 @@ function createMatchesForNewUsers(tournamentId, newUsers) {
     const lobby = lobbies[tournamentId];
     if (!lobby || !lobby.currentRoomId) return;
 
-    const roomId = lobby.currentRoomId;
+    const roomId = lobby.currentRoomId;  // ⭐ USE SAME ROOM
 
     for (const username in newUsers) {
-
         const user = newUsers[username];
         const s = io.sockets.sockets.get(user.socketId);
         if (!s) continue;
 
-        // ⭐ First join room
-        s.join(roomId);
+        s.join(roomId); // ⭐ JOIN SAME ROOM
 
-        // ⭐ Add to room.users BEFORE sending data
         rooms[roomId].users[username] = {
             username: user.username,
             avatar: user.avatar,
             socketId: user.socketId
         };
-
-        // ⭐ Send full game state ONLY to this new user
-        s.emit("MATCH_FOUND", {
-            roomId,
-            players: Object.values(rooms[roomId].users)
-        });
-
-        // ⭐ Send current score/coin/time state
-        s.emit("TOURNAMENT_STATE_UPDATE", {
-            coins: currentTournamentCoins[roomId],   // your existing data
-            scores: currentTournamentScores[roomId], // your existing data
-            round: currentRound[roomId],
-            timeLeft: currentTimeLeft[roomId]
-        });
-
-        console.log(username, "joined running game");
     }
 
-    // ⭐ Update room users for everyone
     io.to(roomId).emit("ROOM_USERS", {
         users: rooms[roomId].users
     });
-}
 
+    io.to(roomId).emit("MATCH_FOUND", {
+        roomId,
+        players: Object.values(rooms[roomId].users)
+    });
+}
 
 
 function resetTournament(tournamentId) {
@@ -428,7 +412,7 @@ function resetTournament(tournamentId) {
         lobbyInterval: null,
         gameStarted: false
     };
-    console.log("New empty lobby created for:", tournamentId);  
+    console.log("New empty lobby created for:", tournamentId);
 
 }
 function roomIsEmpty(roomId) {
