@@ -46,16 +46,11 @@ io.on("connection", (socket) => {
 
             socket.join(tournamentId);
 
-            const roomUsers = lobby.currentRoomId
-                ? rooms[lobby.currentRoomId].users
-                : {};
-
+            // ⭐ SEND WAITING USER IN USER_LIST
             io.to(tournamentId).emit("USER_LIST", {
                 ...lobby.users,
-                ...lobby.waitingUsers,
-                ...roomUsers
+                ...lobby.waitingUsers
             });
-
 
             socket.emit("WAITING_STATE", {
                 msg: "Tournament in progress. You will enter next round."
@@ -108,10 +103,21 @@ io.on("connection", (socket) => {
             delete roomResults[roomId][username];
 
         socket.join(roomId);
-
         io.to(roomId).emit("ROOM_USERS", {
             users: rooms[roomId].users
         });
+
+        // ⭐ Send existing scores to the new user
+        if (roomResults[roomId]) {
+            for (const player in roomResults[roomId]) {
+                socket.emit("TOURNAMENT_COIN_UPDATE", {
+                    username: player,
+                    coins: roomResults[roomId][player]
+                });
+            }
+        }
+
+       
     });
 
 
@@ -146,7 +152,6 @@ io.on("connection", (socket) => {
     socket.on("TOURNAMENT_COIN_UPDATE", ({ username, roomId, coins }) => {
         if (rooms[roomId] && rooms[roomId].users[username]) {
             io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", { username, coins });
-            io.to(tournamentId).emit("TOURNAMENT_COIN_UPDATE", { username, coins });
         }
     });
 
