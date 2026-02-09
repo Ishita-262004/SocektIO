@@ -253,7 +253,7 @@ function startLobbyTimer(tournamentId) {
     }, 1000);
 }
 
-//const PLAYERS_PER_MATCH = 1;
+/*//const PLAYERS_PER_MATCH = 1;
 
 function createMatches(tournamentId) {
     const lobby = lobbies[tournamentId];
@@ -263,8 +263,8 @@ function createMatches(tournamentId) {
 
     const usernames = Object.keys(lobby.users);
 
-    for (let i = 0; i < usernames.length; i++ /*+= PLAYERS_PER_MATCH*/) {
-        const group = usernames.slice(i, /*i + PLAYERS_PER_MATCH*/);
+    for (let i = 0; i < usernames.length; i++ *//*+= PLAYERS_PER_MATCH*//*) {
+        const group = usernames.slice(i, *//*i + PLAYERS_PER_MATCH*//*);
       //  if (group.length < PLAYERS_PER_MATCH) break;
 
         const roomId = tournamentId + "_ROOM_" + Date.now();
@@ -302,6 +302,56 @@ function createMatches(tournamentId) {
         startTournamentTimer(tournamentId);
     }
     io.to(tournamentId).emit("USER_LIST", lobby.users);
+}*/
+function createMatches(tournamentId) {
+    const lobby = lobbies[tournamentId];
+    if (!lobby) return;
+
+    lobby.gameStarted = true;
+
+    const usernames = Object.keys(lobby.users);
+    if (usernames.length < 2) {
+        console.log("Not enough players to start");
+        return;
+    }
+
+    // ⭐ CREATE ONLY ONE ROOM
+    const roomId = tournamentId + "_ROOM_1";
+    rooms[roomId] = { users: {} };
+    lobby.currentRoomId = roomId;
+
+    // ⭐ Move ALL players into SAME ROOM
+    usernames.forEach(username => {
+        const user = lobby.users[username];
+        const s = io.sockets.sockets.get(user.socketId);
+        if (!s) return;
+
+        s.join(roomId);
+
+        rooms[roomId].users[username] = {
+            username: user.username,
+            avatar: user.avatar,
+            socketId: user.socketId
+        };
+    });
+
+    // ⭐ SEND ROOM USERS
+    io.to(roomId).emit("ROOM_USERS", {
+        users: rooms[roomId].users
+    });
+
+    // ⭐ SEND MATCH_FOUND
+    io.to(roomId).emit("MATCH_FOUND", {
+        roomId,
+        players: Object.values(rooms[roomId].users)
+    });
+
+    // ⭐ Clear lobby players (but after MATCH_FOUND)
+    lobby.users = {};
+
+    io.to(tournamentId).emit("USER_LIST", lobby.users);
+
+    startTournamentTimer(tournamentId);
 }
 
 
