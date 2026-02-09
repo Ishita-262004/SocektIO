@@ -260,7 +260,7 @@ function createMatches(tournamentId) {
                 socketId: user.socketId
                 };
 
-                delete lobby.users[username];
+               // delete lobby.users[username];
         });
 
         // SEND ROOM USERS
@@ -428,7 +428,7 @@ function resetTournament(tournamentId) {
         lobbyInterval: null,
         gameStarted: false
     };
-    console.log("New empty lobby created for:", tournamentId);
+    console.log("New empty lobby created for:", tournamentId);  
 
 }
 function roomIsEmpty(roomId) {
