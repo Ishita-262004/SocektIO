@@ -364,11 +364,6 @@ function createMatches(tournamentId) {
         ...lobby.waitingUsers
     });
 
-    setTimeout(() => {
-        lobby.users = {};
-    }, 100); // delay only 100 ms so MATCH_FOUND goes out safely
-
-
     startTournamentTimer(tournamentId);
 }
 
