@@ -278,9 +278,10 @@ const tournamentState = {};
 
 function startTournamentTimer(tournamentId) {
 
+    const lobby = lobbies[tournamentId];   // ⭐ REQUIRED
+
     let lastRound = 1;
 
-    // RESET state if new
     if (!tournamentState[tournamentId]) {
         tournamentState[tournamentId] = { startTime: Date.now() };
     }
@@ -293,82 +294,45 @@ function startTournamentTimer(tournamentId) {
     tournamentTimers[tournamentId] = setInterval(() => {
         const now = Date.now();
 
-        const tournamentTime = Math.max(
-            0,
-            Math.ceil((endTime - now) / 1000)
-        );
-
+        const tournamentTime = Math.max(0, Math.ceil((endTime - now) / 1000));
         const elapsed = Math.floor((now - startTime) / 1000);
         const round = Math.floor(elapsed / ROUND_TIME) + 1;
         const roundTime = Math.max(1, ROUND_TIME - (elapsed % ROUND_TIME));
-        // CHECK IF ALL ROOMS OF THIS TOURNAMENT ARE EMPTY
-        let allEmpty = true;
 
-        for (const roomId in rooms) {
-            if (roomId.startsWith(tournamentId)) {
-                if (!roomIsEmpty(roomId)) {
-                    allEmpty = false;
-                    break;
-                }
-            }
-        }
-
-        if (allEmpty) {
-            console.log("Tournament empty. Ending now:", tournamentId);
-
-            io.to(tournamentId).emit("TOURNAMENT_FORCE_END");
-
-            clearInterval(tournamentTimers[tournamentId]);
-            resetTournament(tournamentId);
-            return;
-        }
         io.to(tournamentId).emit("TOURNAMENT_STATE", {
             tournamentTime,
             round,
             roundTime
         });
 
-        if (round !== lastRound) {
-            io.to(tournamentId).emit("ROUND_ENDED", { round: lastRound });
-            lastRound = round;
-        }
-        // ⭐ MOVE WAITING USERS INTO TOURNAMENT LOBBY FOR NEXT ROUND
-        const lobby = lobbies[tournamentId];
-
+        // ⭐ NEW USERS SHOULD ENTER NEXT ROUND HERE
         if (lobby && Object.keys(lobby.waitingUsers).length > 0) {
-            for (const user in lobby.waitingUsers) {
+
+            const newUsers = Object.keys(lobby.waitingUsers);
+
+            // create rooms for new users
+            createMatchesForNewUsers(tournamentId, lobby.waitingUsers);
+
+            // move users to main lobby list
+            for (const user of newUsers) {
                 lobby.users[user] = lobby.waitingUsers[user];
             }
 
-            lobby.waitingUsers = {}; // clear waiting list
+            lobby.waitingUsers = {};
 
             io.to(tournamentId).emit("USER_LIST", lobby.users);
-            console.log("Waiting users moved into tournament:", Object.keys(lobby.users));
-        }
-        // CREATE MATCHES FOR ONLY NEW USERS
-        if (lobby) {
-            const newUsers = Object.keys(lobby.waitingUsers);
-            if (newUsers.length > 0) {
 
-                const tempLobby = { users: {} };
-
-                // only new users in temp
-                newUsers.forEach(u => {
-                    tempLobby.users[u] = lobby.users[u];
-                });
-
-                // call match creator only for new users
-                createMatchesForNewUsers(tournamentId, tempLobby.users);
-            }
+            console.log("Waiting users moved and matched:", newUsers);
         }
 
-
+        // END OF TOURNAMENT
         if (tournamentTime <= 0) {
             clearInterval(tournamentTimers[tournamentId]);
-            console.log("Tournament ended. Waiting for player results...");
         }
+
     }, 1000);
 }
+
 
 function createMatchesForNewUsers(tournamentId, newUsers) {
 
