@@ -306,25 +306,27 @@ function startTournamentTimer(tournamentId) {
             roundTime
         });
 
-        // ⭐ NEW USERS SHOULD ENTER NEXT ROUND HERE
-        if (lobby && Object.keys(lobby.waitingUsers).length > 0) {
+        // ⭐ NEW USERS ENTER ONLY WHEN NEW ROUND STARTS
+        if (round !== lastRound) {
 
-            const newUsers = Object.keys(lobby.waitingUsers);
+            lastRound = round;
 
-            // create rooms for new users
-            createMatchesForNewUsers(tournamentId, lobby.waitingUsers);
+            if (Object.keys(lobby.waitingUsers).length > 0) {
 
-            // move users to main lobby list
-            for (const user of newUsers) {
-                lobby.users[user] = lobby.waitingUsers[user];
+                createMatchesForNewUsers(tournamentId, lobby.waitingUsers);
+
+                for (const user in lobby.waitingUsers) {
+                    lobby.users[user] = lobby.waitingUsers[user];
+                }
+
+                lobby.waitingUsers = {};
+
+                io.to(tournamentId).emit("USER_LIST", lobby.users);
+
+                console.log("New users joined at start of round:", round);
             }
-
-            lobby.waitingUsers = {};
-
-            io.to(tournamentId).emit("USER_LIST", lobby.users);
-
-            console.log("Waiting users moved and matched:", newUsers);
         }
+
 
         // END OF TOURNAMENT
         if (tournamentTime <= 0) {
