@@ -46,10 +46,16 @@ io.on("connection", (socket) => {
 
             socket.join(tournamentId);
 
+            const roomUsers = lobby.currentRoomId
+                ? rooms[lobby.currentRoomId].users
+                : {};
+
             io.to(tournamentId).emit("USER_LIST", {
                 ...lobby.users,
-                ...lobby.waitingUsers
+                ...lobby.waitingUsers,
+                ...roomUsers
             });
+
 
             socket.emit("WAITING_STATE", {
                 msg: "Tournament in progress. You will enter next round."
@@ -140,6 +146,7 @@ io.on("connection", (socket) => {
     socket.on("TOURNAMENT_COIN_UPDATE", ({ username, roomId, coins }) => {
         if (rooms[roomId] && rooms[roomId].users[username]) {
             io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", { username, coins });
+            io.to(tournamentId).emit("TOURNAMENT_COIN_UPDATE", { username, coins });
         }
     });
 
