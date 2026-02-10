@@ -504,6 +504,7 @@ function startTournamentTimer(tournamentId) {
             });
         }
 
+
         // ---- ROUND CHANGES ----
         if (!lobby.roundProcessed[round]) {
             lobby.roundProcessed[round] = true;
