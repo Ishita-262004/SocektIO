@@ -38,10 +38,8 @@ io.on("connection", (socket) => {
 
         const lobby = lobbies[tournamentId];
         // If tournament already started → move new players into waiting list
-        if (lobby.gameStarted === true || lobby.resultTimeRunning === true) {
-            socket.emit("LOBBY_CLOSED", JSON.stringify({
-                msg: "Result is running. New tournament will start soon."
-            }));
+        if (lobby.gameStarted === true) {
+            
             lobby.waitingUsers[username] = {
                 username,
                 avatar,
@@ -49,7 +47,6 @@ io.on("connection", (socket) => {
             };
 
             socket.join(tournamentId);
-
             // ⭐ SEND WAITING USER IN USER_LIST
             io.to(tournamentId).emit("USER_LIST", {
                 ...lobby.users,
