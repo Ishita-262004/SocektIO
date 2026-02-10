@@ -35,8 +35,14 @@ io.on("connection", (socket) => {
                 roundProcessed: {}
             };
         }
-
+       
         const lobby = lobbies[tournamentId];
+
+        socket.emit("TOURNAMENT_STATUS", {
+            gameStarted: lobby.gameStarted,
+            resultRunning: lobby.resultTimeRunning || false
+        });
+
         // If tournament already started → move new players into waiting list
         if (lobby.gameStarted === true) {
             
