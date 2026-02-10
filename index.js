@@ -38,8 +38,8 @@ io.on("connection", (socket) => {
 
         const lobby = lobbies[tournamentId];
         // If tournament already started → move new players into waiting list
-                if (lobby.gameStarted === true) {
-
+        if (lobby.gameStarted === true || lobby.resultTimeRunning === true) {
+            socket.emit("LOBBY_CLOSED", { msg: "Tournament result running" });
             lobby.waitingUsers[username] = {
                 username,
                 avatar,
@@ -346,7 +346,7 @@ function createMatches(tournamentId) {
 
 function startResultTimer(tournamentId, roomId) {
     let resultTime = 15;
-
+    lobbies[tournamentId].resultTimeRunning = true;
     const interval = setInterval(() => {
         io.to(roomId).emit("RESULT_TIMER", { resultTime });
 
@@ -354,7 +354,7 @@ function startResultTimer(tournamentId, roomId) {
 
         if (resultTime < 0) {
             clearInterval(interval);
-
+            lobbies[tournamentId].resultTimeRunning = false;
             // after result timer finish → reset tournament
             resetTournament(tournamentId);
         }
