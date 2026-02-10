@@ -310,7 +310,7 @@ function createMatches(tournamentId) {
     }
     io.to(tournamentId).emit("USER_LIST", lobby.users);
 }*/
-function createMatches(tournamentId) {
+/*function createMatches(tournamentId) {
     const lobby = lobbies[tournamentId];
     if (!lobby) return;
 
@@ -371,12 +371,12 @@ function startResultTimer(tournamentId, roomId) {
 
         resultTime--;
 
-        /*if (resultTime < 0) {
+        *//*if (resultTime < 0) {
             clearInterval(interval);
             lobbies[tournamentId].resultTimeRunning = false;
             // after result timer finish → reset tournament
             resetTournament(tournamentId);
-        }*/
+        }*//*
 
         if (resultTime < 0) {
             clearInterval(interval);
@@ -400,7 +400,59 @@ function startResultTimer(tournamentId, roomId) {
 
 
     }, 1000);
+}*/
+
+function createMatches(tournamentId) {
+    const lobby = lobbies[tournamentId];
+    if (!lobby) return;
+
+    lobby.gameStarted = true;
+
+    const usernames = Object.keys(lobby.users);
+
+    // ⭐ CREATE ONLY ONE ROOM
+    const roomId = tournamentId + "_ROOM_1";
+    rooms[roomId] = { users: {} };
+    lobby.currentRoomId = roomId;
+
+    // ⭐ Move ALL players into SAME ROOM
+    usernames.forEach(username => {
+        const user = lobby.users[username];
+        const s = io.sockets.sockets.get(user.socketId);
+        if (!s) return;
+
+        s.join(roomId);
+
+        rooms[roomId].users[username] = {
+            username: user.username,
+            avatar: user.avatar,
+            socketId: user.socketId
+        };
+    });
+
+    // ⭐ SEND ROOM USERS
+    io.to(roomId).emit("ROOM_USERS", {
+        users: rooms[roomId].users
+    });
+
+    // ⭐ SEND MATCH_FOUND WITH REAL PLAYERS
+    io.to(roomId).emit("MATCH_FOUND", {
+        roomId,
+        players: Object.values(rooms[roomId].users) // ⭐ CORRECT DATA
+    });
+
+    // ⭐ UPDATE USER LIST BUT DO NOT CLEAR LOBBY USERS YET
+    io.to(tournamentId).emit("USER_LIST", {
+        ...lobby.users,
+        ...lobby.waitingUsers
+    });
+
+    // ❗ DO NOT CLEAR lobby.users HERE
+    // lobby.users = {};
+
+    startTournamentTimer(tournamentId);
 }
+
 
 
 const TOURNAMENT_TIME = 100;
