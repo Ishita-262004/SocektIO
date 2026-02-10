@@ -152,17 +152,14 @@ io.on("connection", (socket) => {
 
         if (expected > 0 && received === expected) {
 
-            io.to(roomId).emit(
-                "TOURNAMENT_RESULT",
-                roomResults[roomId]
-            );
+            io.to(roomId).emit("TOURNAMENT_RESULT", roomResults[roomId]);
 
             const tournamentId = roomId.split("_ROOM_")[0];
 
-            setTimeout(() => {
-                resetTournament(tournamentId);
-            }, 2000);
+            // ⭐ Start synchronized 15-second result timer
+            startResultTimer(tournamentId, roomId);
         }
+
     });
 
 
@@ -345,6 +342,24 @@ function createMatches(tournamentId) {
     lobby.users = {};
 
     startTournamentTimer(tournamentId);
+}
+
+function startResultTimer(tournamentId, roomId) {
+    let resultTime = 15;
+
+    const interval = setInterval(() => {
+        io.to(roomId).emit("RESULT_TIMER", { resultTime });
+
+        resultTime--;
+
+        if (resultTime < 0) {
+            clearInterval(interval);
+
+            // after result timer finish → reset tournament
+            resetTournament(tournamentId);
+        }
+
+    }, 1000);
 }
 
 
