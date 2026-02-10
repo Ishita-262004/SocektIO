@@ -649,6 +649,7 @@ function resetTournament(tournamentId) {
     lobbies[tournamentId] = {
         users: {},
         lobbyTime: 40,
+
         lobbyInterval: null,
         gameStarted: false
     };
