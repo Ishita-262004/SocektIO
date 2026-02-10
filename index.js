@@ -588,6 +588,8 @@ function removeUserEverywhere(username, socketId) {
         const lobby = lobbies[tId];
         delete lobby.users[username];
         delete lobby.waitingUsers[username];
+
+
     }
 
     for (const roomId in rooms) {
