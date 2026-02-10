@@ -200,16 +200,26 @@ io.on("connection", (socket) => {
 
 
 
-    socket.on("LEAVE_LOBBY", ({ tournamentId }) => {
+    socket.on("LEAVE_LOBBY", ({ tournamentId, username }) => {
 
-        removeUserEverywhere(username, socket.id);
+        const lobby = lobbies[tournamentId];
+        if (!lobby) return;
 
+        if (lobby.gameStarted === false) {
+            // lobby NOT started → allow removal
+            removeUserEverywhere(username, socket.id);
+        }
+
+        // user just leave socket room
         socket.leave(tournamentId);
 
+        // Send updated list
         io.to(tournamentId).emit("USER_LIST", {
             ...lobby.users,
             ...lobby.waitingUsers
         });
+
+        console.log("User left lobby without affecting tournament:", username);
     });
 
 
@@ -503,7 +513,7 @@ function resetTournament(tournamentId) {
 
 }
 
-function removeUserEverywhere(username, socketId) {
+/*function removeUserEverywhere(username, socketId) {
     // Remove from lobby & waiting list
     for (const tId in lobbies) {
         const lobby = lobbies[tId];
@@ -524,7 +534,42 @@ function removeUserEverywhere(username, socketId) {
             delete roomResults[roomId][username];
         }
     }
+}*/
+
+function removeUserEverywhere(username, socketId) {
+
+    if (!username && socketId) {
+        // find username by socketId first
+        for (const tId in lobbies) {
+            const lobby = lobbies[tId];
+            for (const u in lobby.users) {
+                if (lobby.users[u].socketId === socketId) {
+                    username = u;
+                }
+            }
+            for (const u in lobby.waitingUsers) {
+                if (lobby.waitingUsers[u].socketId === socketId) {
+                    username = u;
+                }
+            }
+        }
+    }
+
+    if (!username) return; 
+
+    for (const tId in lobbies) {
+        const lobby = lobbies[tId];
+        delete lobby.users[username];
+        delete lobby.waitingUsers[username];
+    }
+
+    for (const roomId in rooms) {
+        delete rooms[roomId].users[username];
+        delete liveCoins[roomId]?.[username];
+        delete roomResults[roomId]?.[username];
+    }
 }
+
 
 function roomIsEmpty(roomId) {
     return !rooms[roomId] || Object.keys(rooms[roomId].users).length === 0;
