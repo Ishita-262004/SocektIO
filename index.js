@@ -38,11 +38,6 @@ io.on("connection", (socket) => {
        
         const lobby = lobbies[tournamentId];
 
-        socket.emit("TOURNAMENT_STATUS", {
-            gameStarted: lobby.gameStarted,
-            resultRunning: lobby.resultTimeRunning || false
-        });
-
         // If tournament already started → move new players into waiting list
         if (lobby.gameStarted === true) {
             
@@ -369,12 +364,33 @@ function startResultTimer(tournamentId, roomId) {
 
         resultTime--;
 
-        if (resultTime < 0) {
+        /*if (resultTime < 0) {
             clearInterval(interval);
             lobbies[tournamentId].resultTimeRunning = false;
             // after result timer finish → reset tournament
             resetTournament(tournamentId);
+        }*/
+
+        if (resultTime < 0) {
+            clearInterval(interval);
+            lobbies[tournamentId].resultTimeRunning = false;
+
+            // ⭐ SEND WINNERS RANK TO ALL PLAYERS
+            const finalRoom = rooms[roomId]?.users || {};
+            const finalScores = roomResults[roomId] || {};
+
+            const ranking = Object.keys(finalScores)
+                .sort((a, b) => finalScores[b] - finalScores[a]) // high → low
+                .map((username, index) => ({
+                    username,
+                    rank: index + 1
+                }));
+
+            io.to(roomId).emit("PRIZE_RANK", ranking); // ⭐ VERY IMPORTANT
+
+            resetTournament(tournamentId);
         }
+
 
     }, 1000);
 }
