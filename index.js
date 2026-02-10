@@ -197,6 +197,8 @@ io.on("connection", (socket) => {
         io.to(roomId).emit("ROOM_USERS", {
             users: rooms[roomId]?.users
         });
+        const tournamentId = roomId.split("_ROOM_")[0];
+        deleteTournamentIfEmpty(tournamentId);
     });
 
 
@@ -219,7 +221,7 @@ io.on("connection", (socket) => {
             ...lobby.users,
             ...lobby.waitingUsers
         });
-
+        deleteTournamentIfEmpty(tournamentId);
         console.log("User left lobby without affecting tournament:", username);
     });
 
@@ -599,6 +601,20 @@ function removeUserEverywhere(username, socketId) {
     }
 }
 
+function deleteTournamentIfEmpty(tournamentId) {
+    const lobby = lobbies[tournamentId];
+    if (!lobby) return;
+
+    if (
+        Object.keys(lobby.users).length === 0 &&
+        Object.keys(lobby.waitingUsers).length === 0
+    ) {
+        console.log("Deleting empty tournament:", tournamentId);
+
+        clearInterval(lobby.lobbyInterval);
+        delete lobbies[tournamentId];
+    }
+}
 
 function roomIsEmpty(roomId) {
     return !rooms[roomId] || Object.keys(rooms[roomId].users).length === 0;
