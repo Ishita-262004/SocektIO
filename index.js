@@ -238,8 +238,13 @@ const LOBBY_TIME = 40;
 
 function startLobbyTimer(tournamentId) {
     const lobby = lobbies[tournamentId];
-    if (lobby.lobbyInterval) return;
+   // if (lobby.lobbyInterval) return;
+    if (lobby.lobbyInterval !== null) {
+        clearInterval(lobby.lobbyInterval);
+        lobby.lobbyInterval = null;
+    }
 
+    lobby.lobbyTime = LOBBY_TIME;
     lobby.lobbyInterval = setInterval(() => {
         lobby.lobbyTime--;
 
