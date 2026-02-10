@@ -409,7 +409,7 @@ const ROUND_TIME = 40;
 const tournamentTimers = {};
 const tournamentState = {};
 
-function startTournamentTimer(tournamentId) {
+/*function startTournamentTimer(tournamentId) {
 
     const lobby = lobbies[tournamentId];   // ⭐ REQUIRED
 
@@ -469,7 +469,67 @@ function startTournamentTimer(tournamentId) {
         }
 
     }, 1000);
+}*/
+
+function startTournamentTimer(tournamentId) {
+
+    const lobby = lobbies[tournamentId];
+
+    if (!tournamentState[tournamentId]) {
+        tournamentState[tournamentId] = { startTime: Date.now() };
+    }
+
+    if (tournamentTimers[tournamentId]) return;
+
+    const startTime = tournamentState[tournamentId].startTime;
+    const endTime = startTime + TOURNAMENT_TIME * 1000;
+
+    tournamentTimers[tournamentId] = setInterval(() => {
+
+        const now = Date.now();
+
+        const tournamentTime = Math.max(0, Math.ceil((endTime - now) / 1000));
+        const elapsed = Math.floor((now - startTime) / 1000);
+
+        const round = Math.floor(elapsed / ROUND_TIME) + 1;
+        const roundTime = ROUND_TIME - (elapsed % ROUND_TIME);
+
+        const roomId = lobby.currentRoomId;
+
+        if (roomId) {
+            io.to(roomId).emit("TOURNAMENT_STATE", {
+                tournamentTime,
+                round,
+                roundTime
+            });
+        }
+
+        // ---- ROUND CHANGES ----
+        if (!lobby.roundProcessed[round]) {
+            lobby.roundProcessed[round] = true;
+
+            if (Object.keys(lobby.waitingUsers).length > 0) {
+
+                createMatchesForNewUsers(tournamentId, lobby.waitingUsers);
+
+                for (const u in lobby.waitingUsers) {
+                    lobby.users[u] = lobby.waitingUsers[u];
+                }
+                lobby.waitingUsers = {};
+
+                io.to(tournamentId).emit("USER_LIST", {
+                    ...lobby.users
+                });
+            }
+        }
+
+        if (tournamentTime <= 0) {
+            clearInterval(tournamentTimers[tournamentId]);
+        }
+
+    }, 1000);
 }
+
 
 
 function createMatchesForNewUsers(tournamentId, newUsers) {
