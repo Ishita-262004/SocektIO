@@ -197,8 +197,6 @@ io.on("connection", (socket) => {
         io.to(roomId).emit("ROOM_USERS", {
             users: rooms[roomId]?.users
         });
-        const tournamentId = roomId.split("_ROOM_")[0];
-        deleteTournamentIfEmpty(tournamentId);
     });
 
 
@@ -221,7 +219,7 @@ io.on("connection", (socket) => {
             ...lobby.users,
             ...lobby.waitingUsers
         });
-        deleteTournamentIfEmpty(tournamentId);
+
         console.log("User left lobby without affecting tournament:", username);
     });
 
@@ -240,11 +238,11 @@ const LOBBY_TIME = 40;
 
 function startLobbyTimer(tournamentId) {
     const lobby = lobbies[tournamentId];
-   // if (lobby.lobbyInterval) return;
-    if (lobby.lobbyInterval !== null) {
+   if (lobby.lobbyInterval) return;
+   /* if (lobby.lobbyInterval !== null) {
         clearInterval(lobby.lobbyInterval);
         lobby.lobbyInterval = null;
-    }
+    }*/
 
     lobby.lobbyTime = LOBBY_TIME;
     lobby.lobbyInterval = setInterval(() => {
@@ -310,7 +308,7 @@ function createMatches(tournamentId) {
     }
     io.to(tournamentId).emit("USER_LIST", lobby.users);
 }*/
-/*function createMatches(tournamentId) {
+function createMatches(tournamentId) {
     const lobby = lobbies[tournamentId];
     if (!lobby) return;
 
@@ -371,14 +369,14 @@ function startResultTimer(tournamentId, roomId) {
 
         resultTime--;
 
-        *//*if (resultTime < 0) {
+        if (resultTime < 0) {
             clearInterval(interval);
             lobbies[tournamentId].resultTimeRunning = false;
             // after result timer finish → reset tournament
             resetTournament(tournamentId);
-        }*//*
+        }
 
-        if (resultTime < 0) {
+      /*  if (resultTime < 0) {
             clearInterval(interval);
             lobbies[tournamentId].resultTimeRunning = false;
 
@@ -397,62 +395,10 @@ function startResultTimer(tournamentId, roomId) {
 
             resetTournament(tournamentId);
         }
-
+*/
 
     }, 1000);
-}*/
-
-function createMatches(tournamentId) {
-    const lobby = lobbies[tournamentId];
-    if (!lobby) return;
-
-    lobby.gameStarted = true;
-
-    const usernames = Object.keys(lobby.users);
-
-    // ⭐ CREATE ONLY ONE ROOM
-    const roomId = tournamentId + "_ROOM_1";
-    rooms[roomId] = { users: {} };
-    lobby.currentRoomId = roomId;
-
-    // ⭐ Move ALL players into SAME ROOM
-    usernames.forEach(username => {
-        const user = lobby.users[username];
-        const s = io.sockets.sockets.get(user.socketId);
-        if (!s) return;
-
-        s.join(roomId);
-
-        rooms[roomId].users[username] = {
-            username: user.username,
-            avatar: user.avatar,
-            socketId: user.socketId
-        };
-    });
-
-    // ⭐ SEND ROOM USERS
-    io.to(roomId).emit("ROOM_USERS", {
-        users: rooms[roomId].users
-    });
-
-    // ⭐ SEND MATCH_FOUND WITH REAL PLAYERS
-    io.to(roomId).emit("MATCH_FOUND", {
-        roomId,
-        players: Object.values(rooms[roomId].users) // ⭐ CORRECT DATA
-    });
-
-    // ⭐ UPDATE USER LIST BUT DO NOT CLEAR LOBBY USERS YET
-    io.to(tournamentId).emit("USER_LIST", {
-        ...lobby.users,
-        ...lobby.waitingUsers
-    });
-
-    // ❗ DO NOT CLEAR lobby.users HERE
-    // lobby.users = {};
-
-    startTournamentTimer(tournamentId);
 }
-
 
 
 const TOURNAMENT_TIME = 100;
@@ -461,7 +407,7 @@ const ROUND_TIME = 40;
 const tournamentTimers = {};
 const tournamentState = {};
 
-/*function startTournamentTimer(tournamentId) {
+function startTournamentTimer(tournamentId) {
 
     const lobby = lobbies[tournamentId];   // ⭐ REQUIRED
 
@@ -521,69 +467,7 @@ const tournamentState = {};
         }
 
     }, 1000);
-}*/
-
-function startTournamentTimer(tournamentId) {
-
-    const lobby = lobbies[tournamentId];
-
-    if (!tournamentState[tournamentId]) {
-        tournamentState[tournamentId] = { startTime: Date.now() };
-    }
-
-    if (tournamentTimers[tournamentId]) return;
-
-    const startTime = tournamentState[tournamentId].startTime;
-    const endTime = startTime + TOURNAMENT_TIME * 1000;
-
-    tournamentTimers[tournamentId] = setInterval(() => {
-
-        const now = Date.now();
-
-        const tournamentTime = Math.max(0, Math.ceil((endTime - now) / 1000));
-        const elapsed = Math.floor((now - startTime) / 1000);
-
-        const round = Math.floor(elapsed / ROUND_TIME) + 1;
-        const roundTime = ROUND_TIME - (elapsed % ROUND_TIME);
-
-        const roomId = lobby.currentRoomId;
-
-        if (roomId) {
-            io.to(roomId).emit("TOURNAMENT_STATE", {
-                tournamentTime,
-                round,
-                roundTime
-            });
-        }
-
-
-
-        // ---- ROUND CHANGES ----
-        if (!lobby.roundProcessed[round]) {
-            lobby.roundProcessed[round] = true;
-
-            if (Object.keys(lobby.waitingUsers).length > 0) {
-
-                createMatchesForNewUsers(tournamentId, lobby.waitingUsers);
-
-                for (const u in lobby.waitingUsers) {
-                    lobby.users[u] = lobby.waitingUsers[u];
-                }
-                lobby.waitingUsers = {};
-
-                io.to(tournamentId).emit("USER_LIST", {
-                    ...lobby.users
-                });
-            }
-        }
-
-        if (tournamentTime <= 0) {
-            clearInterval(tournamentTimers[tournamentId]);
-        }
-
-    }, 1000);
 }
-
 
 
 function createMatchesForNewUsers(tournamentId, newUsers) {
@@ -649,7 +533,6 @@ function resetTournament(tournamentId) {
     lobbies[tournamentId] = {
         users: {},
         lobbyTime: 40,
-
         lobbyInterval: null,
         gameStarted: false
     };
@@ -705,8 +588,6 @@ function removeUserEverywhere(username, socketId) {
         const lobby = lobbies[tId];
         delete lobby.users[username];
         delete lobby.waitingUsers[username];
-
-
     }
 
     for (const roomId in rooms) {
@@ -715,7 +596,6 @@ function removeUserEverywhere(username, socketId) {
         delete roomResults[roomId]?.[username];
     }
 }
-
 function deleteTournamentIfEmpty(tournamentId) {
     const lobby = lobbies[tournamentId];
     if (!lobby) return;
@@ -730,6 +610,7 @@ function deleteTournamentIfEmpty(tournamentId) {
         delete lobbies[tournamentId];
     }
 }
+
 
 function roomIsEmpty(roomId) {
     return !rooms[roomId] || Object.keys(rooms[roomId].users).length === 0;
