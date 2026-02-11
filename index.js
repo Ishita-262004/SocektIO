@@ -188,7 +188,7 @@ io.on("connection", (socket) => {
 
 
 
-  /*  socket.on("LEAVE_GAME", ({ roomId, username }) => {
+    socket.on("LEAVE_GAME", ({ roomId, username }) => {
         removeUserEverywhere(username, socket.id);
 
         socket.leave(roomId);
@@ -198,27 +198,9 @@ io.on("connection", (socket) => {
         });
 
 
-    });*/
-
-    socket.on("LEAVE_GAME", ({ tournamentId, username }) => {
-        const lobby = lobbies[tournamentId];
-        if (!lobby) return;
-
-        // remove user from all places
-        removeUserEverywhere(username, socket.id);
-
-        socket.leave(tournamentId);
-
-        console.log("User left game:", username);
-
-        // send updated list
-        io.to(tournamentId).emit("USER_LIST", {
-            ...lobby.users,
-            ...lobby.waitingUsers
-        });
-
-        deleteTournamentIfEmpty(tournamentId);
     });
+
+   
 
 
     socket.on("LEAVE_LOBBY", ({ tournamentId, username }) => {
@@ -584,7 +566,7 @@ function resetTournament(tournamentId) {
     }
 }*/
 
-function removeUserEverywhere(username, socketId) {
+/*function removeUserEverywhere(username, socketId) {
 
     if (!username && socketId) {
         // find username by socketId first
@@ -630,7 +612,50 @@ function deleteTournamentIfEmpty(tournamentId) {
         clearInterval(lobby.lobbyInterval);
         delete lobbies[tournamentId];
     }
+}*/
+function removeUserEverywhere(username, socketId) {
+
+    // REMOVE FROM ROOMS
+    for (const roomId in rooms) {
+        for (const user in rooms[roomId].users) {
+            if (rooms[roomId].users[user].socketId === socketId || user === username) {
+                delete rooms[roomId].users[user];
+            }
+        }
+
+        // ⭐ If room empty → delete room
+        if (Object.keys(rooms[roomId].users).length === 0) {
+            delete rooms[roomId];
+        }
+    }
+
+    // REMOVE FROM LOBBIES
+    for (const tid in lobbies) {
+        const lobby = lobbies[tid];
+
+        if (lobby.users[username]) delete lobby.users[username];
+        if (lobby.waitingUsers[username]) delete lobby.waitingUsers[username];
+
+        // ⭐ CHECK IF TOURNAMENT IS EMPTY
+        const total = Object.keys(lobby.users).length + Object.keys(lobby.waitingUsers).length;
+
+        if (total === 0) {
+            console.log("⭐ Tournament is EMPTY → deleting...", tid);
+
+            // stop timers
+            if (lobby.lobbyInterval) clearInterval(lobby.lobbyInterval);
+            if (tournamentTimers[tid]) clearInterval(tournamentTimers[tid]);
+
+            // delete tournament completely
+            delete lobbies[tid];
+            delete tournamentTimers[tid];
+            delete tournamentState[tid];
+
+            io.to(tid).emit("TOURNAMENT_DELETED");
+        }
+    }
 }
+
 
 
 const PORT = process.env.PORT || 3000;
