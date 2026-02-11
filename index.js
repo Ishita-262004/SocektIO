@@ -686,6 +686,13 @@ function removeUserEverywhere(username, socketId) {
             io.to(tid).emit("TOURNAMENT_DELETED");
         }
     }
+    for (const tid in lobbies) {
+        const lobby = lobbies[tid];
+        io.to(tid).emit("USER_LIST", {
+            ...lobby.users,
+            ...lobby.waitingUsers
+        });
+    }
 }
 
 
