@@ -544,48 +544,35 @@ function createMatchesForNewUsers(tournamentId, newUsers) {
 }
 */
 function resetTournament(tournamentId) {
-    console.log("Reset tournament:", tournamentId);
+    console.log("RESETTING TOURNAMENT:", tournamentId);
 
     const lobby = lobbies[tournamentId];
+    if (!lobby) return;
 
-    if (lobby?.lobbyInterval)
-        clearInterval(lobby.lobbyInterval);
+    const roomId = lobby.currentRoomId;
 
-    if (tournamentTimers[tournamentId])
-        clearInterval(tournamentTimers[tournamentId]);
-
-    // DELETE old data
-    delete lobbies[tournamentId];
-    delete tournamentTimers[tournamentId];
-    delete tournamentState[tournamentId];
-
-    // DELETE rooms of this tournament
-    for (const roomId in rooms) {
-        if (roomId.startsWith(tournamentId)) {
-            delete rooms[roomId];
-        }
+    // DELETE room data
+    if (roomId) {
+        delete rooms[roomId];
+        delete roomResults[roomId];
+        delete liveCoins[roomId];
     }
 
-    // DELETE results
-    for (const r in roomResults) {
-        if (r.startsWith(tournamentId)) {
-            delete roomResults[r];
-        }
-    }
-
-    // ⭐ CREATE BRAND NEW CLEAN LOBBY
+    // RESET lobby
     lobbies[tournamentId] = {
         users: {},
         waitingUsers: {},
-        lobbyTime: 40,
+        lobbyTime: LOBBY_TIME,
         lobbyInterval: null,
-        currentRoomId: null,
         gameStarted: false,
-        roundProcessed: {}
+        currentRoomId: null,
+        roundProcessed: {},
+        resultTimeRunning: false
     };
 
-    console.log("New empty lobby created for:", tournamentId);
+    console.log("Tournament reset completed");
 }
+
 
 
 /*function removeUserEverywhere(username, socketId) {
