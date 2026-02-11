@@ -188,8 +188,7 @@ io.on("connection", (socket) => {
 
 
 
-    socket.on("LEAVE_GAME", ({ roomId, username }) => {
-
+  /*  socket.on("LEAVE_GAME", ({ roomId, username }) => {
         removeUserEverywhere(username, socket.id);
 
         socket.leave(roomId);
@@ -197,8 +196,29 @@ io.on("connection", (socket) => {
         io.to(roomId).emit("ROOM_USERS", {
             users: rooms[roomId]?.users
         });
-    });
 
+
+    });*/
+
+    socket.on("LEAVE_GAME", ({ tournamentId, username }) => {
+        const lobby = lobbies[tournamentId];
+        if (!lobby) return;
+
+        // remove user from all places
+        removeUserEverywhere(username, socket.id);
+
+        socket.leave(tournamentId);
+
+        console.log("User left game:", username);
+
+        // send updated list
+        io.to(tournamentId).emit("USER_LIST", {
+            ...lobby.users,
+            ...lobby.waitingUsers
+        });
+
+        deleteTournamentIfEmpty(tournamentId);
+    });
 
 
     socket.on("LEAVE_LOBBY", ({ tournamentId, username }) => {
@@ -502,7 +522,7 @@ function createMatchesForNewUsers(tournamentId, newUsers) {
 }
 
 
-/*function resetTournament(tournamentId) {
+function resetTournament(tournamentId) {
     console.log("Reset tournament:", tournamentId);
 
     const lobby = lobbies[tournamentId];
@@ -538,48 +558,6 @@ function createMatchesForNewUsers(tournamentId, newUsers) {
     };
     console.log("New empty lobby created for:", tournamentId);
 
-}*/
-// reset tournamnet fix for back game and again tournment start.
-function resetTournament(tournamentId) {
-    const lobby = lobbies[tournamentId];
-    if (!lobby) return;
-
-    // CLEAR ALL
-    lobby.users = {};
-    lobby.waitingUsers = {};
-    lobby.roundProcessed = {};
-    lobby.gameStarted = false;
-    lobby.currentRoomId = null;
-
-    lobby.lobbyTime = LOBBY_TIME;
-
-    // CLEAR ROOM DATA
-    for (const roomId in rooms) {
-        if (roomId.startsWith(tournamentId + "_ROOM_")) {
-            delete rooms[roomId];
-        }
-    }
-
-    // CLEAR RESULTS + LIVE COINS
-    for (const roomId in roomResults) {
-        if (roomId.startsWith(tournamentId + "_ROOM_")) {
-            delete roomResults[roomId];
-        }
-    }
-    for (const roomId in liveCoins) {
-        if (roomId.startsWith(tournamentId + "_ROOM_")) {
-            delete liveCoins[roomId];
-        }
-    }
-
-    // RESET TIMER FLAGS
-    tournamentState[tournamentId] = null;
-    tournamentTimers[tournamentId] = null;
-
-    // ⭐ MOST IMPORTANT: RESTART NEW LOBBY
-    startLobbyTimer(tournamentId);
-
-    console.log("Tournament RESET → new lobby started");
 }
 
 
@@ -654,10 +632,6 @@ function deleteTournamentIfEmpty(tournamentId) {
     }
 }
 
-
-function roomIsEmpty(roomId) {
-    return !rooms[roomId] || Object.keys(rooms[roomId].users).length === 0;
-}
 
 const PORT = process.env.PORT || 3000;
 
