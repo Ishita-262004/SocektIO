@@ -109,7 +109,6 @@ io.on("connection", (socket) => {
             ...rooms[roomId].users[username],
             socketId: socket.id
         };
-        // FULL FIX: CLEAR OLD RESULTS WHEN USER ENTERS ROOM AGAIN
         if (!roomResults[roomId])
             roomResults[roomId] = {};
 
