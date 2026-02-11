@@ -393,7 +393,8 @@ function startResultTimer(tournamentId, roomId) {
                     rank: index + 1
                 }));
 
-            io.to(roomId).emit("PRIZE_RANK", ranking); // ⭐ VERY IMPORTANT
+            io.to(roomId).emit("PRIZE_RANK", ranking);
+            io.to(tournamentId).emit("PRIZE_RANK", ranking);  // ⭐ important
 
             resetTournament(tournamentId);
         }
