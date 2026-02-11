@@ -371,14 +371,14 @@ function startResultTimer(tournamentId, roomId) {
 
         resultTime--;
 
-        if (resultTime < 0) {
+       /* if (resultTime < 0) {
             clearInterval(interval);
             lobbies[tournamentId].resultTimeRunning = false;
             // after result timer finish → reset tournament
             resetTournament(tournamentId);
-        }
+        }*/
 
-      /*  if (resultTime < 0) {
+        if (resultTime < 0) {
             clearInterval(interval);
             lobbies[tournamentId].resultTimeRunning = false;
 
@@ -397,7 +397,7 @@ function startResultTimer(tournamentId, roomId) {
 
             resetTournament(tournamentId);
         }
-*/
+
 
     }, 1000);
 }
