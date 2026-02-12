@@ -146,9 +146,7 @@ io.on("connection", (socket) => {
 
         roomResults[roomId][username] = coins;
 
-       // const expected = Object.keys(rooms[roomId]?.users || {}).length;
-        const expected = Object.keys(rooms[roomId]?.users || {}).filter(u => rooms[roomId].users[u]).length;
-
+        const expected = Object.keys(rooms[roomId]?.users || {}).length;
         const received = Object.keys(roomResults[roomId]).length;
 
         if (expected > 0 && received === expected) {
@@ -227,8 +225,6 @@ io.on("connection", (socket) => {
     });
 
 
-
-
     socket.on("disconnect", () => {
 
         removeUserEverywhere(null, socket.id);
@@ -244,6 +240,10 @@ const LOBBY_TIME = 40;
 function startLobbyTimer(tournamentId) {
     const lobby = lobbies[tournamentId];
    if (lobby.lobbyInterval) return;
+   /* if (lobby.lobbyInterval !== null) {
+        clearInterval(lobby.lobbyInterval);
+        lobby.lobbyInterval = null;
+    }*/
 
     lobby.lobbyTime = LOBBY_TIME;
     lobby.lobbyInterval = setInterval(() => {
@@ -355,10 +355,7 @@ function createMatches(tournamentId) {
     });
 
     // ⭐ Clear lobby players (but after MATCH_FOUND)
-   // lobby.users = {};
-    for (const username in rooms[roomId].users) {
-        delete lobby.users[username]; // remove only players who already moved
-    }
+    lobby.users = {};
 
     startTournamentTimer(tournamentId);
 }
@@ -483,10 +480,6 @@ function createMatchesForNewUsers(tournamentId, newUsers) {
     const roomId = lobby.currentRoomId;  // ⭐ USE SAME ROOM
 
     for (const username in newUsers) {
-        if (!newUsers[username]) continue;
-
-        if (!lobby.users[username] && !lobby.waitingUsers[username]) continue;
-
         const user = newUsers[username];
         const s = io.sockets.sockets.get(user.socketId);
         if (!s) continue;
