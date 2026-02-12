@@ -199,9 +199,6 @@ io.on("connection", (socket) => {
 
     });
 
-   
-
-
     socket.on("LEAVE_LOBBY", ({ tournamentId, username }) => {
 
         const lobby = lobbies[tournamentId];
@@ -644,7 +641,7 @@ function deleteTournamentIfEmpty(tournamentId) {
         delete lobbies[tournamentId];
     }
 }*/
-function removeUserEverywhere(username, socketId) {
+/*function removeUserEverywhere(username, socketId) {
 
     if (Object.keys(lobby.users).length === 0 &&
         Object.keys(lobby.waitingUsers).length === 0) {
@@ -713,10 +710,65 @@ function removeUserEverywhere(username, socketId) {
         }
 
     }
+}*/
+function removeUserEverywhere(username, socketId) {
+
+    // 1) Find username if missing
+    if (!username && socketId) {
+        for (const tId in lobbies) {
+            const lobby = lobbies[tId];
+            for (const u in lobby.users) {
+                if (lobby.users[u].socketId === socketId) username = u;
+            }
+            for (const u in lobby.waitingUsers) {
+                if (lobby.waitingUsers[u].socketId === socketId) username = u;
+            }
+        }
+    }
+
+    if (!username) return;
+
+    // 2) Remove from all lobbies
+    for (const tId in lobbies) {
+        const lobby = lobbies[tId];
+
+        delete lobby.users[username];
+        delete lobby.waitingUsers[username];
+
+        const totalPlayers =
+            Object.keys(lobby.users).length +
+            Object.keys(lobby.waitingUsers).length;
+
+        if (!lobby.gameStarted && totalPlayers === 0) {
+            console.log("Reset lobby because empty:", tId);
+
+            if (lobby.lobbyInterval) clearInterval(lobby.lobbyInterval);
+
+            lobbies[tId] = {
+                users: {},
+                waitingUsers: {},
+                lobbyTime: LOBBY_TIME,
+                lobbyInterval: null,
+                gameStarted: false,
+                currentRoomId: null,
+                roundProcessed: {},
+                resultTimeRunning: false
+            };
+        }
+    }
+
+    // 3) Remove from rooms
+    for (const roomId in rooms) {
+        delete rooms[roomId].users[username];
+        if (liveCoins[roomId]) delete liveCoins[roomId][username];
+        if (roomResults[roomId]) delete roomResults[roomId][username];
+
+        // delete empty rooms
+        if (Object.keys(rooms[roomId].users).length === 0) {
+            delete rooms[roomId];
+        }
+    }
 }
-
-
-
 
 const PORT = process.env.PORT || 3000;
 
