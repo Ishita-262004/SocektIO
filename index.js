@@ -524,6 +524,8 @@ function createMatchesForNewUsers(tournamentId, newUsers) {
     const roomId = lobby.currentRoomId;  // ⭐ USE SAME ROOM
 
     for (const username in newUsers) {
+        if (!newUsers[username]) continue;
+
         if (!lobby.users[username] && !lobby.waitingUsers[username]) continue;
 
         const user = newUsers[username];
