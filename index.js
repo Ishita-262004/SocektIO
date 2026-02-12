@@ -450,7 +450,7 @@ const tournamentState = {};
 
 function startTournamentTimer(tournamentId) {
 
-    const lobby = lobbies[tournamentId];   // ⭐ REQUIRED
+    const lobby = lobbies[tournamentId];   
 
     let lastRound = 1;
 
@@ -786,7 +786,7 @@ function removeUserEverywhere(username, socketId) {
             Object.keys(lobby.users).length +
             Object.keys(lobby.waitingUsers).length;
 
-        if (lobby.gameStarted) {
+       /* if (lobby.gameStarted) {
             const total =
                 Object.keys(lobby.users).length +
                 Object.keys(lobby.waitingUsers).length;
@@ -795,6 +795,15 @@ function removeUserEverywhere(username, socketId) {
                 console.log("Running tournament became empty → RESET");
                 resetTournament(tId);
             }
+        }*/
+        if (lobby.gameStarted) {
+
+            if (lobby.waitingUsers[username]) {
+                delete lobby.waitingUsers[username];
+            }
+        } else {
+            delete lobby.users[username];
+            delete lobby.waitingUsers[username];
         }
 
         if (!lobby.gameStarted && totalPlayers === 0) {
