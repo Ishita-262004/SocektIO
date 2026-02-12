@@ -32,12 +32,18 @@ io.on("connection", (socket) => {
                 lobbyInterval: null,
                 gameStarted: false,
                 waitingUsers: {},
-                roundProcessed: {}
+                roundProcessed: {},
+                resultTimeRunning: false
             };
         }
        
         const lobby = lobbies[tournamentId];
-
+        if (lobby.resultTimeRunning === true) {
+            socket.emit("LOBBY_CLOSED", {
+                msg: "Tournament result is being calculated. Please wait!"
+            });
+            return;   // ⭐ STOP USER FROM ENTERING
+        }
         // If tournament already started → move new players into waiting list
         if (lobby.gameStarted === true) {
             
@@ -405,9 +411,7 @@ function createMatches(tournamentId) {
 function startResultTimer(tournamentId, roomId) {
     let resultTime = 15;
     lobbies[tournamentId].resultTimeRunning = true;
-    io.to(tournamentId).emit("RESULT_TIMER_STATE", { running: true });
     io.to(tournamentId).emit("LOBBY_CLOSED");
-    io.to(tournamentId).emit("RESULT_TIMER_STARTED");
     const interval = setInterval(() => {
         io.to(roomId).emit("RESULT_TIMER", { resultTime });
 
