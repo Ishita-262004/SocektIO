@@ -187,7 +187,7 @@ io.on("connection", (socket) => {
 
 
 
-    socket.on("LEAVE_GAME", ({ roomId, username }) => {
+   /* socket.on("LEAVE_GAME", ({ roomId, username }) => {
         removeUserEverywhere(username, socket.id);
 
         socket.leave(roomId);
@@ -197,9 +197,28 @@ io.on("connection", (socket) => {
         });
 
 
+    });*/
+    socket.on("LEAVE_GAME", ({ roomId, username }) => {
+
+        const tournamentId = roomId.split("_ROOM_")[0];
+        const lobby = lobbies[tournamentId];
+
+        removeUserEverywhere(username, socket.id);
+        socket.leave(roomId);
+
+        const roomUsers = rooms[roomId]?.users || {};
+        if (lobby && lobby.gameStarted && Object.keys(roomUsers).length === 0) {
+            console.log("Last user left running tournament → RESET");
+            resetTournament(tournamentId);
+        }
+
+        io.to(roomId).emit("ROOM_USERS", {
+            users: rooms[roomId]?.users
+        });
     });
 
-    socket.on("LEAVE_LOBBY", ({ tournamentId, username }) => {
+
+  /*  socket.on("LEAVE_LOBBY", ({ tournamentId, username }) => {
 
         const lobby = lobbies[tournamentId];
         if (!lobby) return;
@@ -219,7 +238,30 @@ io.on("connection", (socket) => {
         });
 
         console.log("User left lobby without affecting tournament:", username);
+    });*/
+    socket.on("LEAVE_LOBBY", ({ tournamentId, username }) => {
+
+        const lobby = lobbies[tournamentId];
+        if (!lobby) return;
+
+        removeUserEverywhere(username, socket.id);
+        socket.leave(tournamentId);
+
+        const totalPlayers =
+            Object.keys(lobby.users).length +
+            Object.keys(lobby.waitingUsers).length;
+
+        if (lobby.gameStarted && totalPlayers === 0) {
+            console.log("Last user left lobby while running → RESET");
+            resetTournament(tournamentId);
+        }
+
+        io.to(tournamentId).emit("USER_LIST", {
+            ...lobby.users,
+            ...lobby.waitingUsers
+        });
     });
+
 
 
     socket.on("disconnect", () => {
@@ -738,6 +780,17 @@ function removeUserEverywhere(username, socketId) {
         const totalPlayers =
             Object.keys(lobby.users).length +
             Object.keys(lobby.waitingUsers).length;
+
+        if (lobby.gameStarted) {
+            const total =
+                Object.keys(lobby.users).length +
+                Object.keys(lobby.waitingUsers).length;
+
+            if (total === 0) {
+                console.log("Running tournament became empty → RESET");
+                resetTournament(tId);
+            }
+        }
 
         if (!lobby.gameStarted && totalPlayers === 0) {
             console.log("Reset lobby because empty:", tId);
