@@ -646,53 +646,65 @@ function deleteTournamentIfEmpty(tournamentId) {
 }*/
 function removeUserEverywhere(username, socketId) {
 
-    // REMOVE FROM ROOMS
-    for (const roomId in rooms) {
-        for (const user in rooms[roomId].users) {
-            if (rooms[roomId].users[user].socketId === socketId || user === username) {
-                delete rooms[roomId].users[user];
+    //  Find username by socketId if not provided
+    if (!username && socketId) {
+        for (const tId in lobbies) {
+            const lobby = lobbies[tId];
+
+            for (const u in lobby.users) {
+                if (lobby.users[u].socketId === socketId) username = u;
+            }
+            for (const u in lobby.waitingUsers) {
+                if (lobby.waitingUsers[u].socketId === socketId) username = u;
             }
         }
+    }
 
-        // ⭐ If room empty → delete room
+    if (!username) return;
+
+    //  Remove from rooms completely
+    for (const roomId in rooms) {
+
+        if (rooms[roomId].users[username]) {
+            delete rooms[roomId].users[username];
+        }
+
+        if (roomResults[roomId] && roomResults[roomId][username]) {
+            delete roomResults[roomId][username];
+        }
+
+        if (liveCoins[roomId] && liveCoins[roomId][username]) {
+            delete liveCoins[roomId][username];
+        }
+
+        // Delete empty room
         if (Object.keys(rooms[roomId].users).length === 0) {
             delete rooms[roomId];
         }
     }
 
-    // REMOVE FROM LOBBIES
-    for (const tid in lobbies) {
-        const lobby = lobbies[tid];
+    //  Remove from lobby and waiting list
+    for (const tId in lobbies) {
+        const lobby = lobbies[tId];
 
-        if (lobby.users[username]) delete lobby.users[username];
-        if (lobby.waitingUsers[username]) delete lobby.waitingUsers[username];
+        delete lobby.users[username];
+        delete lobby.waitingUsers[username];
 
-        // ⭐ CHECK IF TOURNAMENT IS EMPTY
         const total = Object.keys(lobby.users).length + Object.keys(lobby.waitingUsers).length;
 
         if (total === 0) {
-            console.log("⭐ Tournament is EMPTY → deleting...", tid);
+            console.log("Tournament empty → deleting:", tId);
 
-            // stop timers
             if (lobby.lobbyInterval) clearInterval(lobby.lobbyInterval);
-            if (tournamentTimers[tid]) clearInterval(tournamentTimers[tid]);
+            if (tournamentTimers[tId]) clearInterval(tournamentTimers[tId]);
 
-            // delete tournament completely
-            delete lobbies[tid];
-            delete tournamentTimers[tid];
-            delete tournamentState[tid];
-
-            io.to(tid).emit("TOURNAMENT_DELETED");
+            delete lobbies[tId];
+            delete tournamentTimers[tId];
+            delete tournamentState[tId];
         }
     }
-    for (const tid in lobbies) {
-        const lobby = lobbies[tid];
-        io.to(tid).emit("USER_LIST", {
-            ...lobby.users,
-            ...lobby.waitingUsers
-        });
-    }
 }
+
 
 
 
