@@ -646,6 +646,12 @@ function deleteTournamentIfEmpty(tournamentId) {
 }*/
 function removeUserEverywhere(username, socketId) {
 
+    if (Object.keys(lobby.users).length === 0 &&
+        Object.keys(lobby.waitingUsers).length === 0) {
+
+        resetTournament(tournamentId);
+    }
+
     //  Find username by socketId if not provided
     if (!username && socketId) {
         for (const tId in lobbies) {
