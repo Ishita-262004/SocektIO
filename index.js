@@ -692,16 +692,20 @@ function removeUserEverywhere(username, socketId) {
 
         const total = Object.keys(lobby.users).length + Object.keys(lobby.waitingUsers).length;
 
-        if (total === 0) {
-            console.log("Tournament empty → deleting:", tId);
+        if (!lobby.gameStarted) {
+            const total = Object.keys(lobby.users).length + Object.keys(lobby.waitingUsers).length;
 
-            if (lobby.lobbyInterval) clearInterval(lobby.lobbyInterval);
-            if (tournamentTimers[tId]) clearInterval(tournamentTimers[tId]);
+            if (total === 0) {
+                console.log("Deleting EMPTY tournament:", tId);
 
-            delete lobbies[tId];
-            delete tournamentTimers[tId];
-            delete tournamentState[tId];
+                if (lobby.lobbyInterval) clearInterval(lobby.lobbyInterval);
+
+                delete lobbies[tId];
+                delete tournamentTimers[tId];
+                delete tournamentState[tId];
+            }
         }
+
     }
 }
 
