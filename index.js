@@ -582,34 +582,39 @@ function createMatchesForNewUsers(tournamentId, newUsers) {
 }
 */
 function resetTournament(tournamentId) {
-    console.log("RESETTING TOURNAMENT:", tournamentId);
-
     const lobby = lobbies[tournamentId];
     if (!lobby) return;
 
-    const roomId = lobby.currentRoomId;
+    // RESET states
+    lobby.users = {};
+    lobby.waitingUsers = {};
+    lobby.gameStarted = false;
+    lobby.currentRoomId = null;
+    lobby.roundProcessed = {};
 
-    // DELETE room data
-    if (roomId) {
-        delete rooms[roomId];
-        delete roomResults[roomId];
-        delete liveCoins[roomId];
+    // DELETE rooms & results
+    for (const roomId in rooms) {
+        if (roomId.startsWith(tournamentId)) {
+            delete rooms[roomId];
+            delete liveCoins[roomId];
+            delete roomResults[roomId];
+        }
     }
 
-    // RESET lobby
-    lobbies[tournamentId] = {
-        users: {},
-        waitingUsers: {},
-        lobbyTime: LOBBY_TIME,
-        lobbyInterval: null,
-        gameStarted: false,
-        currentRoomId: null,
-        roundProcessed: {},
-        resultTimeRunning: false
-    };
+    if (tournamentTimers[tournamentId]) {
+        clearInterval(tournamentTimers[tournamentId]);
+        delete tournamentTimers[tournamentId];
+    }
+    if (lobby.lobbyInterval) {
+        clearInterval(lobby.lobbyInterval);
+        lobby.lobbyInterval = null;
+    }
 
-    console.log("Tournament reset completed");
+    delete tournamentState[tournamentId];  
+
+    console.log("Tournament fully reset:", tournamentId);
 }
+
 
 
 
