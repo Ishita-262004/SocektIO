@@ -244,7 +244,10 @@ io.on("connection", (socket) => {
         const lobby = lobbies[tournamentId];
         if (!lobby) return;
 
-        removeUserEverywhere(username, socket.id);
+        if (lobby.gameStarted === false) {
+            // lobby NOT started → allow removal
+            removeUserEverywhere(username, socket.id);
+        }
         socket.leave(tournamentId);
 
         const totalPlayers =
