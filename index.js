@@ -405,6 +405,7 @@ function createMatches(tournamentId) {
 function startResultTimer(tournamentId, roomId) {
     let resultTime = 15;
     lobbies[tournamentId].resultTimeRunning = true;
+    io.to(tournamentId).emit("RESULT_TIMER_STATE", { running: true });
     io.to(tournamentId).emit("LOBBY_CLOSED");
     io.to(tournamentId).emit("RESULT_TIMER_STARTED");
     const interval = setInterval(() => {
