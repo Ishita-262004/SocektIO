@@ -204,7 +204,7 @@ io.on("connection", (socket) => {
    
 
 
-   /* socket.on("LEAVE_LOBBY", ({ tournamentId, username }) => {
+    socket.on("LEAVE_LOBBY", ({ tournamentId, username }) => {
 
         const lobby = lobbies[tournamentId];
         if (!lobby) return;
@@ -225,45 +225,8 @@ io.on("connection", (socket) => {
 
         console.log("User left lobby without affecting tournament:", username);
     });
-*/
-    socket.on("LEAVE_LOBBY", ({ tournamentId, username }) => {
 
-        const lobby = lobbies[tournamentId];
-        if (!lobby) return;
 
-        // ALWAYS remove from active room if tournament running
-        if (lobby.gameStarted === true && lobby.currentRoomId) {
-            const roomId = lobby.currentRoomId;
-
-            if (rooms[roomId] && rooms[roomId].users[username]) {
-                delete rooms[roomId].users[username];
-            }
-
-            if (roomResults[roomId] && roomResults[roomId][username]) {
-                delete roomResults[roomId][username];
-            }
-            if (liveCoins[roomId] && liveCoins[roomId][username]) {
-                delete liveCoins[roomId][username];
-            }
-
-            io.to(roomId).emit("ROOM_USERS", {
-                users: rooms[roomId].users
-            });
-        }
-
-        // Remove from lobby & waiting list
-        if (lobby.users[username]) delete lobby.users[username];
-        if (lobby.waitingUsers[username]) delete lobby.waitingUsers[username];
-
-        socket.leave(tournamentId);
-
-        io.to(tournamentId).emit("USER_LIST", {
-            ...lobby.users,
-            ...lobby.waitingUsers
-        });
-
-        console.log("User left lobby:", username);
-    });
 
 
     socket.on("disconnect", () => {
@@ -281,10 +244,6 @@ const LOBBY_TIME = 40;
 function startLobbyTimer(tournamentId) {
     const lobby = lobbies[tournamentId];
    if (lobby.lobbyInterval) return;
-   /* if (lobby.lobbyInterval !== null) {
-        clearInterval(lobby.lobbyInterval);
-        lobby.lobbyInterval = null;
-    }*/
 
     lobby.lobbyTime = LOBBY_TIME;
     lobby.lobbyInterval = setInterval(() => {
