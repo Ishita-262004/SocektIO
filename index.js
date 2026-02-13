@@ -408,6 +408,7 @@ function startResultTimer(tournamentId, roomId) {
 
             io.to(roomId).emit("PRIZE_RANK", ranking);
             io.to(tournamentId).emit("PRIZE_RANK", ranking);  
+            io.to(tournamentId).emit("LOBBY_OPEN");
 
             resetTournament(tournamentId);
         }
@@ -547,9 +548,7 @@ function resetTournament(tournamentId) {
         lobby.lobbyInterval = null;
     }
     delete tournamentState[tournamentId];  
-    startLobbyTimer(tournamentId);
-    io.to(tournamentId).emit("USER_LIST", {});
-
+   
     console.log("Tournament fully reset:", tournamentId);
 }
 
