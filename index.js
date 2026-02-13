@@ -407,7 +407,9 @@ function startResultTimer(tournamentId, roomId) {
                 }));
 
             io.to(roomId).emit("PRIZE_RANK", ranking);
-            io.to(tournamentId).emit("PRIZE_RANK", ranking);  
+            io.to(tournamentId).emit("PRIZE_RANK", ranking);
+
+            io.to(roomId).emit("LOBBY_OPEN");
             io.to(tournamentId).emit("LOBBY_OPEN");
 
             resetTournament(tournamentId);
