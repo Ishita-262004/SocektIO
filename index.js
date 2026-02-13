@@ -546,8 +546,9 @@ function resetTournament(tournamentId) {
         clearInterval(lobby.lobbyInterval);
         lobby.lobbyInterval = null;
     }
-
     delete tournamentState[tournamentId];  
+    startLobbyTimer(tournamentId);
+    io.to(tournamentId).emit("USER_LIST", {});
 
     console.log("Tournament fully reset:", tournamentId);
 }
