@@ -240,12 +240,22 @@ io.on("connection", (socket) => {
 
 
 
-    socket.on("disconnect", () => {
+    /*socket.on("disconnect", () => {
 
         removeUserEverywhere(null, socket.id);
 
         console.log("User fully removed", socket.id);
 
+    });*/
+
+    socket.on("disconnect", () => {
+        console.log("Disconnect detected:", socket.id);
+
+        // Wait 5 seconds before removing
+        setTimeout(() => {
+            removeUserEverywhere(null, socket.id);
+            console.log("User fully removed after timeout:", socket.id);
+        }, 5000);
     });
 
 });
