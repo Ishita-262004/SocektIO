@@ -400,12 +400,7 @@ function createMatches(tournamentId) {
         ...lobby.users,
         ...lobby.waitingUsers
     });
-    io.to(tournamentId).emit("ROOM_USERS", {
-        users: {
-            ...lobby.users,
-            ...lobby.waitingUsers
-        }
-    });
+    
     // ⭐ Clear lobby players (but after MATCH_FOUND)
     lobby.users = {};
 
