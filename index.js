@@ -423,7 +423,7 @@ function startResultTimer(tournamentId, roomId) {
             io.to(roomId).emit("LOBBY_OPEN");
             io.to(tournamentId).emit("LOBBY_OPEN");
 
-           // resetTournament(tournamentId);
+            resetTournament(tournamentId);
             createMatches(tournamentId);
         }
 
