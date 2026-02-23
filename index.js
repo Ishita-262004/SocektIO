@@ -461,9 +461,9 @@ function startTournamentTimer(tournamentId) {
        // const roundTime = Math.max(1, ROUND_TIME - (elapsed % ROUND_TIME));
 
         io.to(tournamentId).emit("TOURNAMENT_STATE", {
-            tournamentTime,
-            round,
-            roundTime
+            tournamentTime//,
+           // round,
+            //roundTime
         });
 
         /*if (round !== lastRound && !lobby.roundProcessed[round]) {*/
