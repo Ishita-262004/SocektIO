@@ -59,7 +59,12 @@ io.on("connection", (socket) => {
                 ...lobby.users,
                 ...lobby.waitingUsers
             });
-
+            io.to(tournamentId).emit("ROOM_USERS", {
+                users: {
+                    ...lobby.users,
+                    ...lobby.waitingUsers
+                }
+            });
             socket.emit("WAITING_STATE", {
                 msg: "Tournament in progress. You will enter next round."
             });
@@ -89,7 +94,12 @@ io.on("connection", (socket) => {
             ...lobby.users,
             ...lobby.waitingUsers
         });
-
+        io.to(tournamentId).emit("ROOM_USERS", {
+            users: {
+                ...lobby.users,
+                ...lobby.waitingUsers
+            }
+        });
        startLobbyTimer(tournamentId);
     });
 
@@ -101,6 +111,12 @@ io.on("connection", (socket) => {
         socket.emit("USER_LIST", {
             ...lobby.users,
             ...lobby.waitingUsers
+        });
+        io.to(tournamentId).emit("ROOM_USERS", {
+            users: {
+                ...lobby.users,
+                ...lobby.waitingUsers
+            }
         });
     });
 
@@ -234,6 +250,12 @@ io.on("connection", (socket) => {
         io.to(tournamentId).emit("USER_LIST", {
             ...lobby.users,
             ...lobby.waitingUsers
+        });
+        io.to(tournamentId).emit("ROOM_USERS", {
+            users: {
+                ...lobby.users,
+                ...lobby.waitingUsers
+            }
         });
     });
 
@@ -378,7 +400,12 @@ function createMatches(tournamentId) {
         ...lobby.users,
         ...lobby.waitingUsers
     });
-
+    io.to(tournamentId).emit("ROOM_USERS", {
+        users: {
+            ...lobby.users,
+            ...lobby.waitingUsers
+        }
+    });
     // ⭐ Clear lobby players (but after MATCH_FOUND)
     lobby.users = {};
 
@@ -485,7 +512,12 @@ function startTournamentTimer(tournamentId) {
                     ...lobby.users,
                     ...lobby.waitingUsers
                 });
-
+                io.to(tournamentId).emit("ROOM_USERS", {
+                    users: {
+                        ...lobby.users,
+                        ...lobby.waitingUsers
+                    }
+                });
                 console.log("New users joined at start of round:", round);
             }
        /* }*/
