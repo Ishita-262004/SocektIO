@@ -424,7 +424,7 @@ function startResultTimer(tournamentId, roomId) {
             io.to(tournamentId).emit("LOBBY_OPEN");
 
            // resetTournament(tournamentId);
-            startTournamentTimer(tournamentId);
+            createMatches(tournamentId);
         }
 
 
