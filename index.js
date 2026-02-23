@@ -402,7 +402,7 @@ function startResultTimer(tournamentId, roomId) {
             resetTournament(tournamentId);
         }*/
 
-      /*  if (resultTime < 0) {
+        if (resultTime < 0) {
             clearInterval(interval);
             lobbies[tournamentId].resultTimeRunning = false;
 
@@ -423,37 +423,11 @@ function startResultTimer(tournamentId, roomId) {
             io.to(roomId).emit("LOBBY_OPEN");
             io.to(tournamentId).emit("LOBBY_OPEN");
 
-            resetTournament(tournamentId);
-        }*/
-
-        if (resultTime < 0) {
-            clearInterval(interval);
-            lobbies[tournamentId].resultTimeRunning = false;
-
-            // --- SEND FINAL RESULT TO USERS ---
-            const finalScores = roomResults[roomId] || {};
-            const ranking = Object.keys(finalScores)
-                .sort((a, b) => finalScores[b] - finalScores[a])
-                .map((username, index) => ({
-                    username,
-                    rank: index + 1
-                }));
-
-            io.to(roomId).emit("PRIZE_RANK", ranking);
-
-            // --- CLEAR OLD ROUND DATA ONLY ---
-            roomResults[roomId] = {};
-            liveCoins[roomId] = {};
-
-            // --- START NEW TOURNAMENT ROUND ---
-            setTimeout(() => {
-                lobbies[tournamentId].gameStarted = true;
-                tournamentState[tournamentId] = { startTime: Date.now() };
-
-                io.to(roomId).emit("ROUND_RESTARTED");
-                startTournamentTimer(tournamentId);
-            }, 2000);
+           // resetTournament(tournamentId);
+            startTournamentTimer(tournamentId);
         }
+
+
     }, 1000);
 }
 
