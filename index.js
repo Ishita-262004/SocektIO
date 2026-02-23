@@ -432,7 +432,7 @@ function startResultTimer(tournamentId, roomId) {
 
 
 const TOURNAMENT_TIME = 100;
-const ROUND_TIME = 40;
+//const ROUND_TIME = 40;
 
 const tournamentTimers = {};
 const tournamentState = {};
@@ -457,8 +457,8 @@ function startTournamentTimer(tournamentId) {
 
         const tournamentTime = Math.max(0, Math.ceil((endTime - now) / 1000));
         const elapsed = Math.floor((now - startTime) / 1000);
-        const round = Math.floor(elapsed / ROUND_TIME) + 1;
-        const roundTime = Math.max(1, ROUND_TIME - (elapsed % ROUND_TIME));
+     //   const round = Math.floor(elapsed / ROUND_TIME) + 1;
+       // const roundTime = Math.max(1, ROUND_TIME - (elapsed % ROUND_TIME));
 
         io.to(tournamentId).emit("TOURNAMENT_STATE", {
             tournamentTime,
