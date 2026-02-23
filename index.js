@@ -441,7 +441,7 @@ function startTournamentTimer(tournamentId) {
 
     const lobby = lobbies[tournamentId];   
 
-    let lastRound = 1;
+   // let lastRound = 1;
 
     if (!tournamentState[tournamentId]) {
         tournamentState[tournamentId] = { startTime: Date.now() };
@@ -466,10 +466,10 @@ function startTournamentTimer(tournamentId) {
             roundTime
         });
 
-        if (round !== lastRound && !lobby.roundProcessed[round]) {
+        /*if (round !== lastRound && !lobby.roundProcessed[round]) {*/
 
-            lastRound = round;
-            lobby.roundProcessed[round] = true;  // ⭐ PREVENT DOUBLE TRIGGER
+           // lastRound = round;
+          //  lobby.roundProcessed[round] = true;  // ⭐ PREVENT DOUBLE TRIGGER
 
             if (Object.keys(lobby.waitingUsers).length > 0) {
 
@@ -481,7 +481,6 @@ function startTournamentTimer(tournamentId) {
 
                 lobby.waitingUsers = {};
 
-              //  io.to(tournamentId).emit("USER_LIST", lobby.users);
                 io.to(tournamentId).emit("USER_LIST", {
                     ...lobby.users,
                     ...lobby.waitingUsers
@@ -489,7 +488,7 @@ function startTournamentTimer(tournamentId) {
 
                 console.log("New users joined at start of round:", round);
             }
-        }
+       /* }*/
 
         // END OF TOURNAMENT
         if (tournamentTime <= 0) {
