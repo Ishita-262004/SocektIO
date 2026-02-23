@@ -361,6 +361,7 @@ function createMatches(tournamentId) {
     if (!lobby) return;
 
     lobby.gameStarted = true;
+    lobby.tournamentTime = TOURNAMENT_TIME;
 
     const usernames = Object.keys(lobby.users);
 
@@ -568,7 +569,7 @@ function resetTournament(tournamentId) {
     lobby.gameStarted = false;
     lobby.currentRoomId = null;
     lobby.roundProcessed = {};
-
+    lobby.tournamentTime = TOURNAMENT_TIME;
     // DELETE rooms & results
     for (const roomId in rooms) {
         if (roomId.startsWith(tournamentId)) {
