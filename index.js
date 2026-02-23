@@ -465,10 +465,14 @@ function startTournamentTimer(tournamentId) {
     const lobby = lobbies[tournamentId];   
 
    // let lastRound = 1;
-
-    if (!tournamentState[tournamentId]) {
-        tournamentState[tournamentId] = { startTime: Date.now() };
+    tournamentState[tournamentId] = { startTime: Date.now() };
+    if (tournamentTimers[tournamentId]) {
+        clearInterval(tournamentTimers[tournamentId]);
     }
+
+  /*  if (!tournamentState[tournamentId]) {
+        tournamentState[tournamentId] = { startTime: Date.now() };
+    }*/
 
     if (tournamentTimers[tournamentId]) return;
 
@@ -587,8 +591,8 @@ function resetTournament(tournamentId) {
         clearInterval(lobby.lobbyInterval);
         lobby.lobbyInterval = null;
     }
-    delete tournamentState[tournamentId];  
-   
+   // delete tournamentState[tournamentId];  
+    tournamentState[tournamentId] = null;
     console.log("Tournament fully reset:", tournamentId);
 }
 
