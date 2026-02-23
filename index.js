@@ -445,7 +445,9 @@ function startResultTimer(tournamentId, roomId) {
             io.to(roomId).emit("LOBBY_OPEN");
             io.to(tournamentId).emit("LOBBY_OPEN");
 
-            resetTournament(tournamentId);
+            //resetTournament(tournamentId);
+            fullTournamentReset(tournamentId);
+
             createMatches(tournamentId);
         }
 
@@ -453,7 +455,39 @@ function startResultTimer(tournamentId, roomId) {
     }, 1000);
 }
 
+function fullTournamentReset(tournamentId) {
 
+    // remove room data
+    for (const roomId in rooms) {
+        if (roomId.startsWith(tournamentId)) {
+            delete rooms[roomId];
+            delete liveCoins[roomId];
+            delete roomResults[roomId];
+        }
+    }
+
+    // rebuild lobby clean
+    lobbies[tournamentId] = {
+        users: {},
+        waitingUsers: {},
+        lobbyTime: LOBBY_TIME,
+        lobbyInterval: null,
+        gameStarted: false,
+        currentRoomId: null,
+        roundProcessed: {},
+        resultTimeRunning: false
+    };
+
+    // reset timers
+    if (tournamentTimers[tournamentId]) {
+        clearInterval(tournamentTimers[tournamentId]);
+        delete tournamentTimers[tournamentId];
+    }
+
+    delete tournamentState[tournamentId];
+
+    console.log("FULL TOURNAMENT RESTARTED:", tournamentId);
+}
 const TOURNAMENT_TIME = 100;
 //const ROUND_TIME = 40;
 
@@ -465,14 +499,10 @@ function startTournamentTimer(tournamentId) {
     const lobby = lobbies[tournamentId];   
 
    // let lastRound = 1;
-    tournamentState[tournamentId] = { startTime: Date.now() };
-    if (tournamentTimers[tournamentId]) {
-        clearInterval(tournamentTimers[tournamentId]);
-    }
 
-  /*  if (!tournamentState[tournamentId]) {
+    if (!tournamentState[tournamentId]) {
         tournamentState[tournamentId] = { startTime: Date.now() };
-    }*/
+    }
 
     if (tournamentTimers[tournamentId]) return;
 
@@ -573,7 +603,7 @@ function resetTournament(tournamentId) {
     lobby.gameStarted = false;
     lobby.currentRoomId = null;
     lobby.roundProcessed = {};
-    lobby.tournamentTime = TOURNAMENT_TIME;
+
     // DELETE rooms & results
     for (const roomId in rooms) {
         if (roomId.startsWith(tournamentId)) {
@@ -591,8 +621,8 @@ function resetTournament(tournamentId) {
         clearInterval(lobby.lobbyInterval);
         lobby.lobbyInterval = null;
     }
-   // delete tournamentState[tournamentId];  
-    tournamentState[tournamentId] = null;
+    delete tournamentState[tournamentId];  
+   
     console.log("Tournament fully reset:", tournamentId);
 }
 
