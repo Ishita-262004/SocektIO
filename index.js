@@ -373,7 +373,6 @@ function createMatches(tournamentId) {
         roomId,
         players: Object.values(rooms[roomId].users)
     });
-
    
     io.to(tournamentId).emit("USER_LIST", {
         ...lobby.users,
@@ -425,9 +424,6 @@ function startResultTimer(tournamentId, roomId) {
 
             resetTournament(tournamentId);
 
-            createMatches(tournamentId);
-
-            startTournamentTimer(tournamentId);
         }*/
 
         if (resultTime < 0) {
@@ -459,7 +455,9 @@ function startResultTimer(tournamentId, roomId) {
                 roomId,
                 players: Object.values(rooms[roomId].users)
             });
-
+            io.to(roomId).emit("ROOM_USERS", {
+                users: rooms[roomId].users
+            });
             startTournamentTimer(tournamentId);
         }
     }, 1000);
