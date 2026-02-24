@@ -444,14 +444,17 @@ function startResultTimer(tournamentId, roomId) {
     }, 1000);
 }
 
+const ENTRY_BET = 10000;
+
 function startTournamentAgain(tournamentId, roomId) {
 
     console.log("Restarting tournament in SAME ROOM:", roomId);
 
     io.to(roomId).emit("TOURNAMENT_RESET", {
         coins: 0,
-        wallet: 10000
+        wallet: ENTRY_BET * -1   // ⭐ wallet goes DOWN → Unity deducts bet
     });
+
 
     const lobby = lobbies[tournamentId];
 
