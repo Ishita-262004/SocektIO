@@ -127,13 +127,22 @@ io.on("connection", (socket) => {
             users: rooms[roomId].users
         });
 
-        for (const user in liveCoins[roomId]) {
+       /* for (const user in liveCoins[roomId]) {
             socket.emit("TOURNAMENT_COIN_UPDATE", {
                 username: user,
                 coins: liveCoins[roomId][user]
             });
         }
-
+*/
+        // ONLY send if coin > 0
+        for (const user in liveCoins[roomId]) {
+            if (liveCoins[roomId][user] > 0) {
+                socket.emit("TOURNAMENT_COIN_UPDATE", {
+                    username: user,
+                    coins: liveCoins[roomId][user]
+                });
+            }
+        }
         for (const user in roomResults[roomId]) {
             socket.emit("TOURNAMENT_COIN_UPDATE", {
                 username: user,
@@ -367,7 +376,8 @@ function createMatches(tournamentId) {
     io.to(roomId).emit("ROOM_USERS", {
         users: rooms[roomId].users
     });
-
+    liveCoins[roomId] = {};
+    roomResults[roomId] = {};
     // ⭐ SEND MATCH_FOUND
     io.to(roomId).emit("MATCH_FOUND", {
         roomId,
