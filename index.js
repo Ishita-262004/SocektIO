@@ -447,7 +447,7 @@ function startResultTimer(tournamentId, roomId) {
             liveCoins[roomId] = {};
             roomResults[roomId] = {};
            
-            
+            io.to(tournamentId).emit("TOURNAMENT_RESET");
             // ⭐ Restart 100-second tournament immediately
             tournamentState[tournamentId] = { startTime: Date.now() };
             resetTournament(tournamentId);
