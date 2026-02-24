@@ -394,12 +394,12 @@ function startResultTimer(tournamentId, roomId) {
 
         resultTime--;
 
-       /* if (resultTime < 0) {
-            clearInterval(interval);
-            lobbies[tournamentId].resultTimeRunning = false;
-            // after result timer finish → reset tournament
-            resetTournament(tournamentId);
-        }*/
+        /* if (resultTime < 0) {
+             clearInterval(interval);
+             lobbies[tournamentId].resultTimeRunning = false;
+             // after result timer finish → reset tournament
+             resetTournament(tournamentId);
+         }*/
 
         /*if (resultTime < 0) {
             clearInterval(interval);
@@ -428,9 +428,11 @@ function startResultTimer(tournamentId, roomId) {
 
         if (resultTime < 0) {
             clearInterval(interval);
-            lobbies[tournamentId].resultTimeRunning = false;
 
-            // SEND WINNERS
+            const lobby = lobbies[tournamentId];
+            lobby.resultTimeRunning = false;
+
+            // --- SEND FINAL RANKING ----
             const finalScores = roomResults[roomId] || {};
             const ranking = Object.keys(finalScores)
                 .sort((a, b) => finalScores[b] - finalScores[a])
@@ -440,27 +442,30 @@ function startResultTimer(tournamentId, roomId) {
                 }));
 
             io.to(roomId).emit("PRIZE_RANK", ranking);
-            io.to(tournamentId).emit("PRIZE_RANK", ranking);
 
-            // ⭐ DO NOT RESET PLAYERS
-            // Only clear coins + roomResults
+            // --- RESET COINS & SCORES ---
             liveCoins[roomId] = {};
             roomResults[roomId] = {};
 
-            // ⭐ Restart 100-second tournament immediately
+            // --- RESET ROUND DATA ---
+            if (lobby.roundProcessed) delete lobby.roundProcessed[roomId];
+
+            // --- START NEW TOURNAMENT IMMEDIATELY ---
             tournamentState[tournamentId] = { startTime: Date.now() };
 
-            // ⭐ send a NEW MATCH START event
             io.to(roomId).emit("MATCH_FOUND", {
                 roomId,
                 players: Object.values(rooms[roomId].users)
             });
+
             io.to(roomId).emit("ROOM_USERS", {
                 users: rooms[roomId].users
             });
+
+            // Restart game timer instantly
             startTournamentTimer(tournamentId);
         }
-    }, 1000);
+    })
 }
 
 
