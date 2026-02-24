@@ -192,6 +192,14 @@ io.on("connection", (socket) => {
                 }
             }
         }
+        const user = rooms[roomId].users[username];
+        if (user) {
+            let wallet = user.wallet || 10000;  // store real wallet
+
+            user.wallet = wallet;
+
+            io.to(user.socketId).emit("WALLET_UPDATE", { wallet });
+        }
     });
 
 
@@ -448,11 +456,6 @@ function startTournamentAgain(tournamentId, roomId) {
 
     console.log("Restarting tournament in SAME ROOM:", roomId);
 
-    io.to(roomId).emit("TOURNAMENT_RESET", {
-        coins: 0,
-        wallet: 10000
-    });
-
     const lobby = lobbies[tournamentId];
 
     lobby.gameStarted = true;
@@ -474,7 +477,7 @@ function startTournamentAgain(tournamentId, roomId) {
     });
 }
 
-const TOURNAMENT_TIME = 100;
+const TOURNAMENT_TIME = 30;
 //const ROUND_TIME = 40;
 
 const tournamentTimers = {};
