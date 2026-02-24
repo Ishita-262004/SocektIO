@@ -448,6 +448,11 @@ function startTournamentAgain(tournamentId, roomId) {
 
     console.log("Restarting tournament in SAME ROOM:", roomId);
 
+    io.to(roomId).emit("TOURNAMENT_RESET", {
+        coins: 0,
+        wallet: 10000
+    });
+
     const lobby = lobbies[tournamentId];
 
     lobby.gameStarted = true;
