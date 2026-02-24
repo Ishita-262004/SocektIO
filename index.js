@@ -446,7 +446,14 @@ function startResultTimer(tournamentId, roomId) {
             // Only clear coins + roomResults
             liveCoins[roomId] = {};
             roomResults[roomId] = {};
+            for (const username in rooms[roomId].users) {
+                liveCoins[roomId][username] = 10000;
 
+                io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", {
+                    username,
+                    coins: 10000
+                });
+            }
             // ⭐ Restart 100-second tournament immediately
             tournamentState[tournamentId] = { startTime: Date.now() };
 
