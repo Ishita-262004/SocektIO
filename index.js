@@ -192,14 +192,7 @@ io.on("connection", (socket) => {
                 }
             }
         }
-        const user = rooms[roomId].users[username];
-        if (user) {
-            let wallet = user.wallet || 10000;  // store real wallet
 
-            user.wallet = wallet;
-
-            io.to(user.socketId).emit("WALLET_UPDATE", { wallet });
-        }
     });
 
 
@@ -456,6 +449,7 @@ function startTournamentAgain(tournamentId, roomId) {
 
     console.log("Restarting tournament in SAME ROOM:", roomId);
 
+ 
     const lobby = lobbies[tournamentId];
 
     lobby.gameStarted = true;
