@@ -446,22 +446,11 @@ function startResultTimer(tournamentId, roomId) {
             // Only clear coins + roomResults
             liveCoins[roomId] = {};
             roomResults[roomId] = {};
-            for (const username in rooms[roomId].users) {
-                liveCoins[roomId][username] = 10000;
-
-                io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", {
-                    username,
-                    coins: 10000
-                });
-            }
-            io.to(roomId).emit("RESTART_TOURNAMENT", {
-                msg: "Restarting tournament",
-                roomId,
-                coins: liveCoins[roomId]
-            });
+           
+            
             // ⭐ Restart 100-second tournament immediately
             tournamentState[tournamentId] = { startTime: Date.now() };
-
+            resetTournament(tournamentId);
            /* // ⭐ send a NEW MATCH START event
             io.to(roomId).emit("MATCH_FOUND", {
                 roomId,
@@ -612,7 +601,7 @@ function resetTournament(tournamentId) {
         clearInterval(lobby.lobbyInterval);
         lobby.lobbyInterval = null;
     }
-    delete tournamentState[tournamentId];  
+  //  delete tournamentState[tournamentId];  
    
     console.log("Tournament fully reset:", tournamentId);
 }
