@@ -448,7 +448,7 @@ function startResultTimer(tournamentId, roomId) {
 function startTournamentAgain(tournamentId, roomId) {
 
     console.log("Restarting tournament in SAME ROOM:", roomId);
-    hardResetRoom(roomId);
+  //  hardResetRoom(roomId);
  
     const lobby = lobbies[tournamentId];
 
