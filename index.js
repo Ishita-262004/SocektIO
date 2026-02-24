@@ -424,51 +424,51 @@ function startResultTimer(tournamentId, roomId) {
 
             io.to(roomId).emit("LOBBY_OPEN");
             io.to(tournamentId).emit("LOBBY_OPEN");
-            restartTournament(tournamentId);
+
+            const room = rooms[roomId];
+
+            // Reset coins
+            liveCoins[roomId] = {};
+
+            // Reset results
+            roomResults[roomId] = {};
+
+            // Reset player temporary data
+            for (const username in room.users) {
+                room.users[username].coins = 0;   // Tournament coins = 0
+            }
+            startTournamentAgain(tournamentId, roomId);
            // resetTournament(tournamentId);
 
         }
     }, 1000);
 }
 
-function restartTournament(tournamentId) {
+function startTournamentAgain(tournamentId, roomId) {
+
+    console.log("Restarting tournament in SAME ROOM:", roomId);
+
     const lobby = lobbies[tournamentId];
-    if (!lobby) return;
 
-    console.log("Auto Restarting Tournament:", tournamentId);
-
-    // ⭐ 1. CLEAR old room data (CRITICAL FIX)
-    if (lobby.currentRoomId) {
-        const roomId = lobby.currentRoomId;
-
-        // DELETE PLAYERS
-        delete rooms[roomId];
-
-        // DELETE COINS
-        delete liveCoins[roomId];
-
-        // DELETE RESULTS
-        delete roomResults[roomId];
-    }
-
-    // ⭐ 2. RESET state
-    lobby.gameStarted = false;
-    lobby.currentRoomId = null;
-    lobby.roundProcessed = {};
+    lobby.gameStarted = true;
     lobby.resultTimeRunning = false;
+    lobby.currentRoomId = roomId;
 
-    // ⭐ 3. CLEAR WAITING USERS (optional)
-    lobby.waitingUsers = {};
-
-    // ⭐ 4. CREATE NEW MATCH Immediately
-    createMatches(tournamentId);
-
-    // ⭐ 5. RESET & START NEW TIMER
+    // Restart  tournament timer
     tournamentState[tournamentId] = { startTime: Date.now() };
     startTournamentTimer(tournamentId);
 
-    console.log("Tournament Restarted:", tournamentId);
+    // Tell Unity to show entry & 0 coins
+    io.to(roomId).emit("MATCH_FOUND", {
+        roomId,
+        players: Object.values(rooms[roomId].users)
+    });
+
+    io.to(roomId).emit("ROOM_USERS", {
+        users: rooms[roomId].users
+    });
 }
+
 const TOURNAMENT_TIME = 100;
 //const ROUND_TIME = 40;
 
