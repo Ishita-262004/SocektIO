@@ -448,7 +448,7 @@ function startResultTimer(tournamentId, roomId) {
 function startTournamentAgain(tournamentId, roomId) {
 
     console.log("Restarting tournament in SAME ROOM:", roomId);
-  //  hardResetRoom(roomId);
+    hardResetRoom(roomId);
  
     const lobby = lobbies[tournamentId];
 
@@ -459,7 +459,12 @@ function startTournamentAgain(tournamentId, roomId) {
     // Restart  tournament timer
     tournamentState[tournamentId] = { startTime: Date.now() };
     startTournamentTimer(tournamentId);
-
+    for (const username in rooms[roomId].users) {
+        io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", {
+            username,
+            coins: 0
+        });
+    }
     // Tell Unity to show entry & 0 coins
     io.to(roomId).emit("MATCH_FOUND", {
         roomId,
