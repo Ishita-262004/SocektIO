@@ -454,10 +454,15 @@ function startResultTimer(tournamentId, roomId) {
                     coins: 10000
                 });
             }
+            io.to(roomId).emit("RESTART_TOURNAMENT", {
+                msg: "Restarting tournament",
+                roomId,
+                coins: liveCoins[roomId]
+            });
             // ⭐ Restart 100-second tournament immediately
             tournamentState[tournamentId] = { startTime: Date.now() };
 
-            // ⭐ send a NEW MATCH START event
+           /* // ⭐ send a NEW MATCH START event
             io.to(roomId).emit("MATCH_FOUND", {
                 roomId,
                 players: Object.values(rooms[roomId].users)
@@ -465,7 +470,7 @@ function startResultTimer(tournamentId, roomId) {
             io.to(roomId).emit("ROOM_USERS", {
                 users: rooms[roomId].users
             });
-           
+           */
             startTournamentTimer(tournamentId);
         }
     }, 1000);
