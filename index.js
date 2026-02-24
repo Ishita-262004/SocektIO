@@ -458,10 +458,7 @@ function startResultTimer(tournamentId, roomId) {
             io.to(roomId).emit("ROOM_USERS", {
                 users: rooms[roomId].users
             });
-            io.to(roomId).emit("RESTART_TOURNAMENT", {
-                roomId,
-                msg: "start_next_game"
-            });
+           
             startTournamentTimer(tournamentId);
         }
     }, 1000);
