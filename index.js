@@ -108,6 +108,9 @@ io.on("connection", (socket) => {
 
     socket.on("JOIN_ROOM", ({ roomId, username }) => {
 
+        if (!liveCoins[roomId]) liveCoins[roomId] = {};
+        if (!roomResults[roomId]) roomResults[roomId] = {};
+
         if (!rooms[roomId])
             rooms[roomId] = { users: {} };
 
@@ -127,7 +130,7 @@ io.on("connection", (socket) => {
             users: rooms[roomId].users
         });
 
-        for (const user in liveCoins[roomId]) {
+      /*  for (const user in liveCoins[roomId]) {
             socket.emit("TOURNAMENT_COIN_UPDATE", {
                 username: user,
                 coins: liveCoins[roomId][user]
@@ -139,7 +142,7 @@ io.on("connection", (socket) => {
                 username: user,
                 coins: roomResults[roomId][user]
             });
-        }
+        }*/
 
     });
 
@@ -434,28 +437,37 @@ function restartTournament(tournamentId) {
 
     console.log("Auto Restarting Tournament:", tournamentId);
 
-    // 1. Clear room data
+    // ⭐ 1. CLEAR old room data (CRITICAL FIX)
     if (lobby.currentRoomId) {
         const roomId = lobby.currentRoomId;
+
+        // DELETE PLAYERS
         delete rooms[roomId];
+
+        // DELETE COINS
         delete liveCoins[roomId];
+
+        // DELETE RESULTS
         delete roomResults[roomId];
     }
 
-    // 2. Reset states (BUT KEEP USERS!)
+    // ⭐ 2. RESET state
     lobby.gameStarted = false;
     lobby.currentRoomId = null;
     lobby.roundProcessed = {};
     lobby.resultTimeRunning = false;
 
-    // 3. Restart tournament instantly (NO LOBBY TIMER)
+    // ⭐ 3. CLEAR WAITING USERS (optional)
+    lobby.waitingUsers = {};
+
+    // ⭐ 4. CREATE NEW MATCH Immediately
     createMatches(tournamentId);
 
-    // 4. Start tournament time again
+    // ⭐ 5. RESET & START NEW TIMER
     tournamentState[tournamentId] = { startTime: Date.now() };
     startTournamentTimer(tournamentId);
 
-    console.log(" Tournament Restarted:", tournamentId);
+    console.log("Tournament Restarted:", tournamentId);
 }
 const TOURNAMENT_TIME = 100;
 //const ROUND_TIME = 40;
