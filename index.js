@@ -448,7 +448,7 @@ function startResultTimer(tournamentId, roomId) {
 function startTournamentAgain(tournamentId, roomId) {
 
     console.log("Restarting tournament in SAME ROOM:", roomId);
-
+    hardResetRoom(roomId);
  
     const lobby = lobbies[tournamentId];
 
@@ -469,6 +469,25 @@ function startTournamentAgain(tournamentId, roomId) {
     io.to(roomId).emit("ROOM_USERS", {
         users: rooms[roomId].users
     });
+}
+
+function hardResetRoom(roomId) {
+    // Wipe live coins
+    if (liveCoins[roomId]) {
+        for (const u in liveCoins[roomId]) delete liveCoins[roomId][u];
+    }
+
+    // Wipe results
+    if (roomResults[roomId]) {
+        for (const u in roomResults[roomId]) delete roomResults[roomId][u];
+    }
+
+    // Wipe old user tournament coins
+    if (rooms[roomId] && rooms[roomId].users) {
+        for (const u in rooms[roomId].users) {
+            rooms[roomId].users[u].coins = 0;
+        }
+    }
 }
 
 const TOURNAMENT_TIME = 30;
