@@ -401,7 +401,7 @@ function startResultTimer(tournamentId, roomId) {
             resetTournament(tournamentId);
         }*/
 
-        /*if (resultTime < 0) {
+        if (resultTime < 0) {
             clearInterval(interval);
             lobbies[tournamentId].resultTimeRunning = false;
 
@@ -424,43 +424,6 @@ function startResultTimer(tournamentId, roomId) {
 
             resetTournament(tournamentId);
 
-        }*/
-
-        if (resultTime < 0) {
-            clearInterval(interval);
-            lobbies[tournamentId].resultTimeRunning = false;
-
-            // SEND WINNERS
-            const finalScores = roomResults[roomId] || {};
-            const ranking = Object.keys(finalScores)
-                .sort((a, b) => finalScores[b] - finalScores[a])
-                .map((username, index) => ({
-                    username,
-                    rank: index + 1
-                }));
-
-            io.to(roomId).emit("PRIZE_RANK", ranking);
-            io.to(tournamentId).emit("PRIZE_RANK", ranking);
-
-            // ⭐ DO NOT RESET PLAYERS
-            // Only clear coins + roomResults
-            liveCoins[roomId] = {};
-            roomResults[roomId] = {};
-           
-            io.to(tournamentId).emit("TOURNAMENT_RESET");
-            // ⭐ Restart 100-second tournament immediately
-            tournamentState[tournamentId] = { startTime: Date.now() };
-            resetTournament(tournamentId);
-           /* // ⭐ send a NEW MATCH START event
-            io.to(roomId).emit("MATCH_FOUND", {
-                roomId,
-                players: Object.values(rooms[roomId].users)
-            });
-            io.to(roomId).emit("ROOM_USERS", {
-                users: rooms[roomId].users
-            });
-           */
-            startTournamentTimer(tournamentId);
         }
     }, 1000);
 }
@@ -601,7 +564,7 @@ function resetTournament(tournamentId) {
         clearInterval(lobby.lobbyInterval);
         lobby.lobbyInterval = null;
     }
-  //  delete tournamentState[tournamentId];  
+    delete tournamentState[tournamentId];  
    
     console.log("Tournament fully reset:", tournamentId);
 }
