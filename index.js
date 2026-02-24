@@ -421,14 +421,42 @@ function startResultTimer(tournamentId, roomId) {
 
             io.to(roomId).emit("LOBBY_OPEN");
             io.to(tournamentId).emit("LOBBY_OPEN");
-
-            resetTournament(tournamentId);
+            restartTournament(tournamentId);
+           // resetTournament(tournamentId);
 
         }
     }, 1000);
 }
 
+function restartTournament(tournamentId) {
+    const lobby = lobbies[tournamentId];
+    if (!lobby) return;
 
+    console.log("Auto Restarting Tournament:", tournamentId);
+
+    // 1. Clear room data
+    if (lobby.currentRoomId) {
+        const roomId = lobby.currentRoomId;
+        delete rooms[roomId];
+        delete liveCoins[roomId];
+        delete roomResults[roomId];
+    }
+
+    // 2. Reset states (BUT KEEP USERS!)
+    lobby.gameStarted = false;
+    lobby.currentRoomId = null;
+    lobby.roundProcessed = {};
+    lobby.resultTimeRunning = false;
+
+    // 3. Restart tournament instantly (NO LOBBY TIMER)
+    createMatches(tournamentId);
+
+    // 4. Start tournament time again
+    tournamentState[tournamentId] = { startTime: Date.now() };
+    startTournamentTimer(tournamentId);
+
+    console.log(" Tournament Restarted:", tournamentId);
+}
 const TOURNAMENT_TIME = 100;
 //const ROUND_TIME = 40;
 
@@ -570,85 +598,6 @@ function resetTournament(tournamentId) {
 }
 
 
-/*function removeUserEverywhere(username, socketId) {
-
-    //  Find username if missing
-    if (!username && socketId) {
-        for (const tId in lobbies) {
-            const lobby = lobbies[tId];
-            for (const u in lobby.users) {
-                if (lobby.users[u].socketId === socketId) username = u;
-            }
-            for (const u in lobby.waitingUsers) {
-                if (lobby.waitingUsers[u].socketId === socketId) username = u;
-            }
-        }
-    }
-
-    if (!username) return;
-
-    //  Remove from all lobbies
-    for (const tId in lobbies) {
-        const lobby = lobbies[tId];
-
-        delete lobby.users[username];
-        delete lobby.waitingUsers[username];
-
-        const totalPlayers =
-            Object.keys(lobby.users).length +
-            Object.keys(lobby.waitingUsers).length;
-
-       *//* if (lobby.gameStarted) {
-            const total =
-                Object.keys(lobby.users).length +
-                Object.keys(lobby.waitingUsers).length;
-
-            if (total === 0) {
-                console.log("Running tournament became empty → RESET");
-                resetTournament(tId);
-            }
-        }*//*
-        if (lobby.gameStarted) {
-
-            if (lobby.waitingUsers[username]) {
-                delete lobby.waitingUsers[username];
-            }
-        } else {
-            delete lobby.users[username];
-            delete lobby.waitingUsers[username];
-        }
-
-        if (!lobby.gameStarted && totalPlayers === 0) {
-            console.log("Reset lobby because empty:", tId);
-
-            if (lobby.lobbyInterval) clearInterval(lobby.lobbyInterval);
-
-            lobbies[tId] = {
-                users: {},
-                waitingUsers: {},
-                lobbyTime: LOBBY_TIME,
-                lobbyInterval: null,
-                gameStarted: false,
-                currentRoomId: null,
-                roundProcessed: {},
-                resultTimeRunning: false
-            };
-        }
-    }
-
-    //  Remove from rooms
-    for (const roomId in rooms) {
-        delete rooms[roomId].users[username];
-        if (liveCoins[roomId]) delete liveCoins[roomId][username];
-        if (roomResults[roomId]) delete roomResults[roomId][username];
-
-        // delete empty rooms
-        if (Object.keys(rooms[roomId].users).length === 0) {
-            delete rooms[roomId];
-        }
-    }
-}
-*/
 function removeUserEverywhere(username, socketId) {
 
     // Find username if missing
