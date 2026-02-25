@@ -727,7 +727,7 @@ function resetTournament(tournamentId) {
 }
 
 
-/*function removeUserEverywhere(username, socketId) {
+function removeUserEverywhere(username, socketId) {
 
     // Find username if missing
     if (!username && socketId) {
@@ -789,7 +789,7 @@ function resetTournament(tournamentId) {
             delete rooms[roomId];
         }
     }
-}*/
+}
 
 const PORT = process.env.PORT || 3000;
 
