@@ -865,6 +865,14 @@ function removeUserEverywhere(username, socketId) {
         if (Object.keys(room.users).length === 0) {
             delete rooms[roomId];
         }
+        const expected = Object.keys(room.users).length;
+        const received = Object.keys(roomResults[roomId] || {}).length;
+
+        if (expected === received && expected > 0) {
+            const tournamentId = roomId.split("_ROOM_")[0];
+            io.to(roomId).emit("TOURNAMENT_RESULT", roomResults[roomId]);
+            startResultTimer(tournamentId, roomId);
+        }
     }
 }
 
