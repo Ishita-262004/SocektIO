@@ -465,9 +465,7 @@ function startTournamentAgain(tournamentId, roomId) {
 
     tournamentState[tournamentId] = { startTime: Date.now() };
     startTournamentTimer(tournamentId);
-    // ⭐ ALWAYS CLEAN RESULTS BEFORE NEXT MATCH
-    roomResults[roomId] = {};
-    liveCoins[roomId] = {};
+
     // Reset coins and results
     for (const username in rooms[roomId].users) {
         liveCoins[roomId][username] = 0;
