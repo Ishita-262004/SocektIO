@@ -459,36 +459,43 @@ function startTournamentAgain(tournamentId, roomId) {
     lobby.gameStarted = true;
     lobby.resultTimeRunning = false;
     lobby.currentRoomId = roomId;
+
+    // ⭐ START RESTART BLOCK EARLY
     restarting[roomId] = true;
+
     tournamentState[tournamentId] = { startTime: Date.now() };
     startTournamentTimer(tournamentId);
 
-    // Reset all live coins & results
+    // Reset coins and results
     for (const username in rooms[roomId].users) {
         liveCoins[roomId][username] = 0;
         roomResults[roomId][username] = 0;
         rooms[roomId].users[username].coins = 0;
     }
 
-    
-    io.to(roomId).emit("ROOM_USERS", {
-        users: rooms[roomId].users
-    });
-
+    // Send MATCH_FOUND first
     io.to(roomId).emit("MATCH_FOUND", {
         roomId,
         players: Object.values(rooms[roomId].users)
     });
 
+    // ⭐ RESTART PROTECTION — FIX OLD UI
     setTimeout(() => {
         restarting[roomId] = false;
-    }, 2000);
-    for (const username in rooms[roomId].users) {
-        io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", {
-            username,
-            coins: 0
+
+        io.to(roomId).emit("ROOM_USERS", {
+            users: rooms[roomId].users
         });
-    }
+
+        // Send coins = 0 (after ROOM_USERS)
+        for (const username in rooms[roomId].users) {
+            io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", {
+                username,
+                coins: 0
+            });
+        }
+
+    }, 2000);
 }
 
 function hardResetRoom(roomId) {
