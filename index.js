@@ -160,10 +160,25 @@ io.on("connection", (socket) => {
 
         roomResults[roomId][username] = coins;
 
-        const expected = Object.keys(rooms[roomId]?.users || {}).length;
+       /* const expected = Object.keys(rooms[roomId]?.users || {}).length;
+        const received = Object.keys(roomResults[roomId]).length;*/
+        // ⭐ Count only CONNECTED players
+        const expected = Object.values(rooms[roomId]?.users || {})
+            .filter(u => !u.disconnected)
+            .length;
+
         const received = Object.keys(roomResults[roomId]).length;
 
+        console.log("Expected:", expected, "Received:", received);
+
         if (expected > 0 && received === expected) {
+            io.to(roomId).emit("TOURNAMENT_RESULT", roomResults[roomId]);
+
+            const tournamentId = roomId.split("_ROOM_")[0];
+            startResultTimer(tournamentId, roomId);
+        }
+
+       /* if (expected > 0 && received === expected) {
 
             io.to(roomId).emit("TOURNAMENT_RESULT", roomResults[roomId]);
 
@@ -171,7 +186,7 @@ io.on("connection", (socket) => {
 
             // ⭐ Start synchronized 15-second result timer
             startResultTimer(tournamentId, roomId);
-        }
+        }*/
 
     });
 
