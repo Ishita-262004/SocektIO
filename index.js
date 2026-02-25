@@ -357,6 +357,9 @@ function createMatches(tournamentId) {
     rooms[roomId] = { users: {} };
     lobby.currentRoomId = roomId;
 
+    liveCoins[roomId] = {};
+    roomResults[roomId] = {};
+
     // ⭐ Move ALL players into SAME ROOM
     usernames.forEach(username => {
         const user = lobby.users[username];
