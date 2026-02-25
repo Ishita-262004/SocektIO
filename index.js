@@ -763,9 +763,17 @@ function removeUserEverywhere(username, socketId) {
     // Remove from rooms (ONLY ONCE)
     for (const roomId in rooms) {
 
-        const wasInside = rooms[roomId].users[username];
+        // Completely remove username from all room users (including ghost entries)
+        for (const u in rooms[roomId].users) {
+            if (u === username) delete rooms[roomId].users[u];
+        }
 
-        delete rooms[roomId].users[username];
+        // Also remove ghost sockets if any
+        for (const u in rooms[roomId].users) {
+            if (rooms[roomId].users[u].socketId === socketId) delete rooms[roomId].users[u];
+        }
+
+        
         if (liveCoins[roomId]) delete liveCoins[roomId][username];
         if (roomResults[roomId]) delete roomResults[roomId][username];
 
