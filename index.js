@@ -173,16 +173,12 @@ io.on("connection", (socket) => {
             startResultTimer(tournamentId, roomId);
         }
 */
-        const expected = Object.keys(rooms[roomId]?.users || {}).length;
+        const expected = Object.keys(rooms[roomId].users).length;
         const received = Object.keys(roomResults[roomId]).length;
 
-        // ⭐ If a player left → expected reduces automatically → no freeze
-        if (received >= expected && expected > 0) {
-
-            console.log("All ACTIVE players reported → sending result");
-
+        if (expected > 0 && received >= expected) {
             io.to(roomId).emit("TOURNAMENT_RESULT", roomResults[roomId]);
-
+            const tournamentId = roomId.split("_ROOM_")[0];
             startResultTimer(tournamentId, roomId);
         }
     });
@@ -271,9 +267,7 @@ io.on("connection", (socket) => {
 
 
     socket.on("disconnect", () => {
-        console.log("Disconnect detected:", socket.id);
-
-        // Wait 5 seconds before removing
+        console.log("User disconnected:", socket.id);
         removeUserEverywhere(null, socket.id);
     });
 
@@ -738,91 +732,52 @@ function resetTournament(tournamentId) {
 
 function removeUserEverywhere(username, socketId) {
 
-    // Find username if missing
+    // Auto-detect username from socketId
     if (!username && socketId) {
         for (const tId in lobbies) {
             const lobby = lobbies[tId];
-            for (const u in lobby.users) {
+            for (const u in lobby.users)
                 if (lobby.users[u].socketId === socketId) username = u;
-            }
-            for (const u in lobby.waitingUsers) {
+            for (const u in lobby.waitingUsers)
                 if (lobby.waitingUsers[u].socketId === socketId) username = u;
-            }
         }
     }
 
     if (!username) return;
 
-    // Remove from all lobbies
+    // Remove from lobbies
     for (const tId in lobbies) {
         const lobby = lobbies[tId];
-
         delete lobby.users[username];
         delete lobby.waitingUsers[username];
 
-        const totalPlayers =
+        const total =
             Object.keys(lobby.users).length +
             Object.keys(lobby.waitingUsers).length;
 
-        // ⭐⭐ THE IMPORTANT FIX ⭐⭐
-        if (lobby.gameStarted && totalPlayers === 0) {
-            console.log("Tournament is empty → RESET", tId);
+        if (lobby.gameStarted && total === 0) {
             resetTournament(tId);
-            continue;
-        }
-
-        // Reset lobby if empty before start
-        if (!lobby.gameStarted && totalPlayers === 0) {
-            if (lobby.lobbyInterval) clearInterval(lobby.lobbyInterval);
-
-            lobbies[tId] = {
-                users: {},
-                waitingUsers: {},
-                lobbyTime: LOBBY_TIME,
-                lobbyInterval: null,
-                gameStarted: false,
-                currentRoomId: null,
-                roundProcessed: {},
-                resultTimeRunning: false
-            };
         }
     }
 
-    // Remove from rooms
+    // Remove from rooms (ONLY ONCE)
     for (const roomId in rooms) {
+
+        const wasInside = rooms[roomId].users[username];
+
         delete rooms[roomId].users[username];
         if (liveCoins[roomId]) delete liveCoins[roomId][username];
         if (roomResults[roomId]) delete roomResults[roomId][username];
 
-        if (Object.keys(rooms[roomId].users).length === 0) {
-            delete rooms[roomId];
-        }
-    }
-    // ⭐ Remove user from active rooms & result expectations
-    for (const roomId in rooms) {
-        if (rooms[roomId].users[username]) {
-            console.log("User left active tournament room:", username);
-
-            // delete user
-            delete rooms[roomId].users[username];
-
-            // remove coins
-            if (liveCoins[roomId]) delete liveCoins[roomId][username];
-
-            // remove result entry
-            if (roomResults[roomId]) delete roomResults[roomId][username];
-
-            // IF user was expected in result → re-evaluate expected players now
+        // Re-check result completion
+        if (wasInside) {
             const expected = Object.keys(rooms[roomId].users).length;
             const received = Object.keys(roomResults[roomId]).length;
 
-            if (received >= expected && expected > 0) {
-                console.log("User left → RESULT now complete");
-
+            if (expected > 0 && received >= expected) {
+                const tId = roomId.split("_ROOM_")[0];
                 io.to(roomId).emit("TOURNAMENT_RESULT", roomResults[roomId]);
-
-                const tournamentId = roomId.split("_ROOM_")[0];
-                startResultTimer(tournamentId, roomId);
+                startResultTimer(tId, roomId);
             }
         }
     }
