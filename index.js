@@ -18,7 +18,7 @@ const lobbies = {
 
 const roomResults = {};
 const liveCoins = {};   
-
+const restarting = {};
 
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
