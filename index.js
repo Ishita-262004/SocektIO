@@ -443,7 +443,9 @@ function startResultTimer(tournamentId, roomId) {
             for (const username in room.users) {
                 room.users[username].coins = 0;   // Tournament coins = 0
             }
-            startTournamentAgain(tournamentId, roomId);
+            setTimeout(() => {
+                startTournamentAgain(tournamentId, roomId);
+            }, 2500);
            // resetTournament(tournamentId);
 
         }
