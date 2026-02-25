@@ -209,7 +209,7 @@ io.on("connection", (socket) => {
         const lobby = lobbies[tournamentId];
 
        // removeUserEverywhere(username, socket.id);
-        const room = rooms[roomId];
+                const room = rooms[roomId];
         if (room && room.users[username]) {
             room.users[username].disconnected = true;
         }
@@ -264,20 +264,45 @@ io.on("connection", (socket) => {
     });*/
 
 
-    socket.on("disconnect", () => {
+    /*socket.on("disconnect", () => {
         console.log("Disconnect detected:", socket.id);
 
         // Wait 5 seconds before removing
-        /*  setTimeout(() => {
+          setTimeout(() => {
               removeUserEverywhere(null, socket.id);
               console.log("User fully removed after timeout:", socket.id);
           }, 5000);
-      */
+      
+        
+    });*/
+    socket.on("disconnect", () => {
+        console.log("User disconnected:", socket.id);
+
+        // Mark user disconnected inside rooms
         for (const roomId in rooms) {
             for (const username in rooms[roomId].users) {
-                if (rooms[roomId].users[username].socketId === socketId) {
+                if (rooms[roomId].users[username].socketId === socket.id) {
                     rooms[roomId].users[username].disconnected = true;
-                    return;
+                    console.log("Marked disconnected in room:", username, roomId);
+                }
+            }
+        }
+
+        // Mark user disconnected inside lobbies
+        for (const tId in lobbies) {
+            const lobby = lobbies[tId];
+
+            for (const username in lobby.users) {
+                if (lobby.users[username].socketId === socket.id) {
+                    lobby.users[username].disconnected = true;
+                    console.log("Marked disconnected in lobby:", username);
+                }
+            }
+
+            for (const username in lobby.waitingUsers) {
+                if (lobby.waitingUsers[username].socketId === socket.id) {
+                    lobby.waitingUsers[username].disconnected = true;
+                    console.log("Marked disconnected in waiting:", username);
                 }
             }
         }
