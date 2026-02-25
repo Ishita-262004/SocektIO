@@ -453,7 +453,7 @@ function startResultTimer(tournamentId, roomId) {
     }, 1000);
 }
 
-function startTournamentAgain(tournamentId, roomId) {
+/*function startTournamentAgain(tournamentId, roomId) {
     console.log("Restarting tournament in SAME ROOM:", roomId);
 
     hardResetRoom(roomId);
@@ -499,8 +499,74 @@ function startTournamentAgain(tournamentId, roomId) {
         }
 
     }, 2000);
-}
+}*/
+function startTournamentAgain(tournamentId, roomId) {
 
+    console.log("Restarting tournament in SAME ROOM:", roomId);
+
+    hardResetRoom(roomId);
+
+    const lobby = lobbies[tournamentId];
+
+    // Tournament restarts, NOW we add waiting users
+    for (const username in lobby.waitingUsers) {
+        const user = lobby.waitingUsers[username];
+
+        const s = io.sockets.sockets.get(user.socketId);
+        if (!s) continue;
+
+        s.join(roomId);
+
+        rooms[roomId].users[username] = {
+            username: user.username,
+            avatar: user.avatar,
+            socketId: user.socketId
+        };
+
+        // Move user into lobby.users
+        lobby.users[username] = user;
+    }
+
+    // Clear waiting list
+    lobby.waitingUsers = {};
+
+    lobby.gameStarted = true;
+    lobby.resultTimeRunning = false;
+    lobby.currentRoomId = roomId;
+
+    restarting[roomId] = true;
+
+    tournamentState[tournamentId] = { startTime: Date.now() };
+    startTournamentTimer(tournamentId);
+
+    // Reset coins
+    for (const username in rooms[roomId].users) {
+        liveCoins[roomId][username] = 0;
+        roomResults[roomId][username] = 0;
+        rooms[roomId].users[username].coins = 0;
+    }
+
+    io.to(roomId).emit("MATCH_FOUND", {
+        roomId,
+        players: Object.values(rooms[roomId].users)
+    });
+
+    setTimeout(() => {
+        restarting[roomId] = false;
+
+        io.to(roomId).emit("ROOM_USERS", {
+            users: rooms[roomId].users
+        });
+
+        for (const username in rooms[roomId].users) {
+            io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", {
+                username,
+                coins: 0
+            });
+        }
+
+    }, 2000);
+}
 function hardResetRoom(roomId) {
     // Wipe live coins
     if (liveCoins[roomId]) {
