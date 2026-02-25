@@ -178,7 +178,7 @@ io.on("connection", (socket) => {
 
 
     socket.on("TOURNAMENT_COIN_UPDATE", ({ username, roomId, coins }) => {
-
+        if (restarting[roomId] === true) return;
         if (!liveCoins[roomId]) liveCoins[roomId] = {};
         liveCoins[roomId][username] = coins;   // ⭐ STORE LIVE COINS
 
@@ -443,9 +443,7 @@ function startResultTimer(tournamentId, roomId) {
             for (const username in room.users) {
                 room.users[username].coins = 0;   // Tournament coins = 0
             }
-            setTimeout(() => {
-                startTournamentAgain(tournamentId, roomId);
-            }, 2500);
+            startTournamentAgain(tournamentId, roomId);
            // resetTournament(tournamentId);
 
         }
@@ -481,23 +479,19 @@ function startTournamentAgain(tournamentId, roomId) {
         players: Object.values(rooms[roomId].users)
     });
 
-    // ⭐ RESTART PROTECTION — FIX OLD UI
-    setTimeout(() => {
-        restarting[roomId] = false;
+    // ⭐ Reset coins immediately before MATCH_FOUND
+    for (const username in rooms[roomId].users) {
+        liveCoins[roomId][username] = 0;
+        roomResults[roomId][username] = 0;
+    }
 
-        io.to(roomId).emit("ROOM_USERS", {
-            users: rooms[roomId].users
+    // ⭐ Send fresh 0 coins before MATCH_FOUND
+    for (const username in rooms[roomId].users) {
+        io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", {
+            username,
+            coins: 0
         });
-
-        // Send coins = 0 (after ROOM_USERS)
-        for (const username in rooms[roomId].users) {
-            io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", {
-                username,
-                coins: 0
-            });
-        }
-
-    }, 2000);
+    }
 }
 
 function hardResetRoom(roomId) {
