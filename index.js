@@ -160,7 +160,9 @@ io.on("connection", (socket) => {
 
         roomResults[roomId][username] = coins;
 
-        const expected = Object.keys(rooms[roomId]?.users || {}).length;
+      //  const expected = Object.keys(rooms[roomId]?.users || {}).length;
+        const expected = Object.values(rooms[roomId]?.users || {})
+            .filter(u => !u.disconnected).length;
         const received = Object.keys(roomResults[roomId]).length;
 
         if (expected > 0 && received === expected) {
@@ -206,7 +208,11 @@ io.on("connection", (socket) => {
         const tournamentId = roomId.split("_ROOM_")[0];
         const lobby = lobbies[tournamentId];
 
-        removeUserEverywhere(username, socket.id);
+       // removeUserEverywhere(username, socket.id);
+        const room = rooms[roomId];
+        if (room && room.users[username]) {
+            room.users[username].disconnected = true;
+        }
         socket.leave(roomId);
 
         const roomUsers = rooms[roomId]?.users || {};
@@ -262,12 +268,20 @@ io.on("connection", (socket) => {
         console.log("Disconnect detected:", socket.id);
 
         // Wait 5 seconds before removing
-        setTimeout(() => {
-            removeUserEverywhere(null, socket.id);
-            console.log("User fully removed after timeout:", socket.id);
-        }, 5000);
+        /*  setTimeout(() => {
+              removeUserEverywhere(null, socket.id);
+              console.log("User fully removed after timeout:", socket.id);
+          }, 5000);
+      */
+        for (const roomId in rooms) {
+            for (const username in rooms[roomId].users) {
+                if (rooms[roomId].users[username].socketId === socketId) {
+                    rooms[roomId].users[username].disconnected = true;
+                    return;
+                }
+            }
+        }
     });
-
 });
 
 const LOBBY_TIME = 40;
