@@ -126,10 +126,15 @@ io.on("connection", (socket) => {
 
         socket.join(roomId);
 
-        io.to(roomId).emit("ROOM_USERS", {
+      /*  io.to(roomId).emit("ROOM_USERS", {
             users: rooms[roomId].users
         });
-
+*/
+        if (!restarting[roomId]) {
+            io.to(roomId).emit("ROOM_USERS", {
+                users: rooms[roomId].users
+            });
+        }
       /*  for (const user in liveCoins[roomId]) {
             socket.emit("TOURNAMENT_COIN_UPDATE", {
                 username: user,
@@ -454,7 +459,7 @@ function startTournamentAgain(tournamentId, roomId) {
     lobby.gameStarted = true;
     lobby.resultTimeRunning = false;
     lobby.currentRoomId = roomId;
-
+    restarting[roomId] = true;
     tournamentState[tournamentId] = { startTime: Date.now() };
     startTournamentTimer(tournamentId);
 
@@ -475,7 +480,9 @@ function startTournamentAgain(tournamentId, roomId) {
         players: Object.values(rooms[roomId].users)
     });
 
-   
+    setTimeout(() => {
+        restarting[roomId] = false;
+    }, 2000);
     for (const username in rooms[roomId].users) {
         io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", {
             username,
