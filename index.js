@@ -573,7 +573,7 @@ function startTournamentAgain(tournamentId, roomId) {
         roomId,
         players: Object.values(rooms[roomId].users)
     });
-    lobby.users = { ...rooms[roomId].users };
+
     setTimeout(() => {
         restarting[roomId] = false;
 
