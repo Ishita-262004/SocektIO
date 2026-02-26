@@ -371,7 +371,7 @@ function createMatches(tournamentId) {
     if (!lobby) return;
 
     lobby.gameStarted = true;
-
+        
     const usernames = Object.keys(lobby.users);
 
     // ⭐ CREATE ONLY ONE ROOM
@@ -407,14 +407,15 @@ function createMatches(tournamentId) {
         roomId,
         players: Object.values(rooms[roomId].users)
     });
-   
+    // ⭐ Clear lobby players (but after MATCH_FOUND)
+    lobby.users = {};
+
     io.to(tournamentId).emit("USER_LIST", {
         ...lobby.users,
         ...lobby.waitingUsers
     });
 
-    // ⭐ Clear lobby players (but after MATCH_FOUND)
-    lobby.users = {};
+   
 
     startTournamentTimer(tournamentId);
 }
@@ -572,7 +573,7 @@ function startTournamentAgain(tournamentId, roomId) {
         roomId,
         players: Object.values(rooms[roomId].users)
     });
-
+    lobby.users = { ...rooms[roomId].users };
     setTimeout(() => {
         restarting[roomId] = false;
 
@@ -805,11 +806,9 @@ function removeUserEverywhere(username, socketId) {
         const expected = Object.keys(rooms[roomId].users).length;
         const received = Object.keys(roomResults[roomId]).length;
 
-        // If no users left → delete room safely
         if (expected === 0) {
-            delete rooms[roomId];
-            delete liveCoins[roomId];
-            delete roomResults[roomId];
+            liveCoins[roomId] = {};
+            roomResults[roomId] = {};
         }
     }
 }
