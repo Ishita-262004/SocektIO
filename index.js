@@ -811,6 +811,47 @@ function removeUserEverywhere(username, socketId) {
             roomResults[roomId] = {};
         }
     }
+
+    // ⭐ AFTER removing user → auto delete empty tournaments
+    for (const tId in lobbies) {
+        const lobby = lobbies[tId];
+
+        const totalPlayers =
+            Object.keys(lobby.users).length +
+            Object.keys(lobby.waitingUsers).length;
+
+        // Count all room players
+        let roomPlayers = 0;
+        for (const roomId in rooms) {
+            if (roomId.startsWith(tId)) {
+                roomPlayers += Object.keys(rooms[roomId].users).length;
+            }
+        }
+
+        // ⭐ If no user exists anywhere → delete full tournament
+        if (totalPlayers === 0 && roomPlayers === 0) {
+
+            console.log("Tournament deleted because no players:", tId);
+
+           
+            // stop tournament timer
+            if (tournamentTimers[tId])
+                clearInterval(tournamentTimers[tId]);
+
+            // delete rooms
+            for (const roomId in rooms) {
+                if (roomId.startsWith(tId)) {
+                    delete rooms[roomId];
+                    delete liveCoins[roomId];
+                    delete roomResults[roomId];
+                }
+            }
+
+            delete lobbies[tId];
+            delete tournamentTimers[tId];
+            delete tournamentState[tId];
+        }
+    }
 }
 
 const PORT = process.env.PORT || 3000;
