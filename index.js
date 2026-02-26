@@ -807,11 +807,13 @@ function removeUserEverywhere(username, socketId) {
         if (liveCoins[roomId]) delete liveCoins[roomId][username];
         if (roomResults[roomId]) delete roomResults[roomId][username];
 
-       /* if (Object.keys(rooms[roomId].users).length === 0) {
-            delete rooms[roomId];
-        }*/
-        if (Object.keys(rooms[roomId].users).length === 0) {
-            rooms[roomId].empty = true;   // ⭐ SAFE FLAG
+        const expected = Object.keys(rooms[roomId].users).length;
+        const received = Object.keys(roomResults[roomId]).length;
+
+        if (expected > 0 && received === expected) {
+            const tournamentId = roomId.split("_ROOM_")[0];
+            io.to(roomId).emit("TOURNAMENT_RESULT", roomResults[roomId]);
+            startResultTimer(tournamentId, roomId);
         }
     }
 
