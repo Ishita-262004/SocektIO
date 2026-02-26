@@ -106,7 +106,7 @@ io.on("connection", (socket) => {
     });
 
 
-   /* socket.on("JOIN_ROOM", ({ roomId, username }) => {
+    socket.on("JOIN_ROOM", ({ roomId, username }) => {
 
         if (!liveCoins[roomId]) liveCoins[roomId] = {};
         if (!roomResults[roomId]) roomResults[roomId] = {};
@@ -126,16 +126,16 @@ io.on("connection", (socket) => {
 
         socket.join(roomId);
 
-      *//*  io.to(roomId).emit("ROOM_USERS", {
+      /*  io.to(roomId).emit("ROOM_USERS", {
             users: rooms[roomId].users
         });
-*//*
+*/
         if (!restarting[roomId]) {
             io.to(roomId).emit("ROOM_USERS", {
                 users: rooms[roomId].users
             });
         }
-      *//*  for (const user in liveCoins[roomId]) {
+      /*  for (const user in liveCoins[roomId]) {
             socket.emit("TOURNAMENT_COIN_UPDATE", {
                 username: user,
                 coins: liveCoins[roomId][user]
@@ -147,49 +147,11 @@ io.on("connection", (socket) => {
                 username: user,
                 coins: roomResults[roomId][user]
             });
-        }*//*
+        }*/
 
     });
-*/
-    socket.on("JOIN_ROOM", ({ roomId, username }) => {
 
-        if (!liveCoins[roomId]) liveCoins[roomId] = {};
-        if (!roomResults[roomId]) roomResults[roomId] = {};
-        if (!rooms[roomId]) rooms[roomId] = { users: {} };
 
-        rooms[roomId].users[username] = {
-            ...rooms[roomId].users[username],
-            socketId: socket.id
-        };
-
-        socket.join(roomId);
-
-        // ALWAYS SEND ROOM_USERS EVEN IF restarting = true
-        io.to(roomId).emit("ROOM_USERS", {
-            users: rooms[roomId].users
-        });
-
-        // RESEND LAST TOURNAMENT_STATE TO NEW PLAYER
-        const tournamentId = roomId.split("_ROOM_")[0];
-        const state = tournamentState[tournamentId];
-        if (state) {
-            const now = Date.now();
-            const endTime = state.startTime + TOURNAMENT_TIME * 1000;
-            const remaining = Math.max(0, Math.ceil((endTime - now) / 1000));
-
-            socket.emit("TOURNAMENT_STATE", {
-                tournamentTime: remaining
-            });
-        }
-
-        // SEND LAST COINS
-        for (const user in liveCoins[roomId]) {
-            socket.emit("TOURNAMENT_COIN_UPDATE", {
-                username: user,
-                coins: liveCoins[roomId][user]
-            });
-        }
-    });
   
     /*socket.on("TOURNAMENT_PLAYER_RESULT", ({ roomId, username, coins }) => {
 
@@ -445,15 +407,15 @@ function createMatches(tournamentId) {
         roomId,
         players: Object.values(rooms[roomId].users)
     });
-    // ⭐ Clear lobby players (but after MATCH_FOUND)
-    lobby.users = {};
+   
 
     io.to(tournamentId).emit("USER_LIST", {
         ...lobby.users,
         ...lobby.waitingUsers
     });
 
-   
+    // ⭐ Clear lobby players (but after MATCH_FOUND)
+    lobby.users = {};
 
     startTournamentTimer(tournamentId);
 }
