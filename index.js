@@ -815,11 +815,7 @@ function removeUserEverywhere(username, socketId) {
         }
     }
 
-    for (const roomId in rooms) {
-        if (roomId.startsWith(tournamentId)) {
-            delete rooms[roomId];   // ⭐ SAFE DELETE HERE ONLY
-        }
-    }
+   
 }
 
 
