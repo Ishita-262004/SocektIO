@@ -153,7 +153,7 @@ io.on("connection", (socket) => {
 
 
   
-    socket.on("TOURNAMENT_PLAYER_RESULT", ({ roomId, username, coins }) => {
+    /*socket.on("TOURNAMENT_PLAYER_RESULT", ({ roomId, username, coins }) => {
 
         if (!roomResults[roomId])
             roomResults[roomId] = {};
@@ -173,8 +173,30 @@ io.on("connection", (socket) => {
             startResultTimer(tournamentId, roomId);
         }
 
-    });
+    });*/
+    socket.on("TOURNAMENT_PLAYER_RESULT", ({ roomId, username, coins }) => {
 
+        if (!rooms[roomId]) {
+            console.warn(`Room ${roomId} not found for result from ${username}`);
+            return; // Stop if room does not exist
+        }
+
+        if (!roomResults[roomId]) roomResults[roomId] = {};
+
+        roomResults[roomId][username] = coins;
+
+        const expected = Object.keys(rooms[roomId].users || {}).length;
+        const received = Object.keys(roomResults[roomId]).length;
+
+        if (expected > 0 && received === expected) {
+            io.to(roomId).emit("TOURNAMENT_RESULT", roomResults[roomId]);
+
+            const tournamentId = roomId.split("_ROOM_")[0];
+
+            startResultTimer(tournamentId, roomId);
+        }
+
+    });
 
 
     socket.on("TOURNAMENT_COIN_UPDATE", ({ username, roomId, coins }) => {
