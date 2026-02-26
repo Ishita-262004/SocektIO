@@ -108,6 +108,18 @@ io.on("connection", (socket) => {
 
     socket.on("JOIN_ROOM", ({ roomId, username }) => {
 
+        // Remove user from lobby when they enter a match
+        const tournamentId = roomId.split("_ROOM_")[0];
+        if (lobbies[tournamentId]) {
+            delete lobbies[tournamentId].users[username];
+            delete lobbies[tournamentId].waitingUsers[username];
+
+            io.to(tournamentId).emit("USER_LIST", {
+                ...lobbies[tournamentId].users,
+                ...lobbies[tournamentId].waitingUsers
+            });
+        }
+
         if (!liveCoins[roomId]) liveCoins[roomId] = {};
         if (!roomResults[roomId]) roomResults[roomId] = {};
 
@@ -609,7 +621,7 @@ function hardResetRoom(roomId) {
     }
 }
 
-const TOURNAMENT_TIME = 30;
+const TOURNAMENT_TIME = 150;
 //const ROUND_TIME = 40;
 
 const tournamentTimers = {};
