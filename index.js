@@ -807,8 +807,17 @@ function removeUserEverywhere(username, socketId) {
         if (liveCoins[roomId]) delete liveCoins[roomId][username];
         if (roomResults[roomId]) delete roomResults[roomId][username];
 
-        if (Object.keys(rooms[roomId].users).length === 0) {
+       /* if (Object.keys(rooms[roomId].users).length === 0) {
             delete rooms[roomId];
+        }*/
+        if (Object.keys(rooms[roomId].users).length === 0) {
+            rooms[roomId].empty = true;   // ⭐ SAFE FLAG
+        }
+    }
+
+    for (const roomId in rooms) {
+        if (roomId.startsWith(tournamentId)) {
+            delete rooms[roomId];   // ⭐ SAFE DELETE HERE ONLY
         }
     }
 }
