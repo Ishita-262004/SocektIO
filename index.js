@@ -20,6 +20,7 @@ const roomResults = {};
 const liveCoins = {};
 const restarting = {};
 
+
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
 
@@ -299,7 +300,7 @@ io.on("connection", (socket) => {
         setTimeout(() => {
             removeUserEverywhere(null, socket.id);
             console.log("User fully removed after timeout:", socket.id);
-        }, 5000);
+        }, 3000);
     });
 
 });
@@ -690,7 +691,8 @@ function startTournamentTimer(tournamentId) {
         }*/
         if (tournamentTime <= 0) {
             clearInterval(tournamentTimers[tournamentId]);
-            delete tournamentTimers[tournamentId];   // ⭐ REQUIRED
+            delete tournamentTimers[tournamentId];
+            delete tournamentState[tournamentId]; // ⭐ reset for next tournament
         }
     }, 1000);
 }
