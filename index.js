@@ -638,7 +638,7 @@ const TOURNAMENT_TIME = 150;
 const tournamentTimers = {};
 const tournamentState = {};
 
-/*function startTournamentTimer(tournamentId) {
+function startTournamentTimer(tournamentId) {
 
     const lobby = lobbies[tournamentId];
 
@@ -654,11 +654,11 @@ const tournamentState = {};
 
     if (tournamentTimers[tournamentId]) return;
 
-    if (!tournamentState[tournamentId]) {
-        tournamentState[tournamentId] = { startTime: Date.now() };
-    }
+   if (!tournamentState[tournamentId]) {
+    tournamentState[tournamentId] = { startTime: Date.now() };
+}
 
-    const startTime = tournamentState[tournamentId].startTime;
+const startTime = tournamentState[tournamentId].startTime;
     const endTime = startTime + TOURNAMENT_TIME * 1000;
 
     tournamentTimers[tournamentId] = setInterval(() => {
@@ -675,12 +675,12 @@ const tournamentState = {};
             //roundTime
         });
 
-        *//*if (round !== lastRound && !lobby.roundProcessed[round]) {*//*
+        /*if (round !== lastRound && !lobby.roundProcessed[round]) {*/
 
         // lastRound = round;
         //  lobby.roundProcessed[round] = true;  // ⭐ PREVENT DOUBLE TRIGGER
 
-        *//*if (Object.keys(lobby.waitingUsers).length > 0) {
+        /*if (Object.keys(lobby.waitingUsers).length > 0) {
 
             createMatchesForNewUsers(tournamentId, lobby.waitingUsers);
 
@@ -696,53 +696,17 @@ const tournamentState = {};
             });
 
             console.log("New users joined at start of round:", round);
-        }*//*
-        *//* }*//*
+        }*/
+        /* }*/
 
         // END OF TOURNAMENT
-        *//*if (tournamentTime <= 0) {
+        /*if (tournamentTime <= 0) {
             clearInterval(tournamentTimers[tournamentId]);
-        }*//*
+        }*/
         if (tournamentTime <= 0) {
             clearInterval(tournamentTimers[tournamentId]);
             delete tournamentTimers[tournamentId];
         }
-    }, 1000);
-}*/
-function startTournamentTimer(tournamentId) {
-
-    if (tournamentTimers[tournamentId]) {
-        clearInterval(tournamentTimers[tournamentId]);
-    }
-
-    tournamentTimers[tournamentId] = setInterval(() => {
-
-        try {
-
-            if (!tournamentState[tournamentId]) return;
-
-            const startTime = tournamentState[tournamentId].startTime;
-
-            const elapsed = Math.floor((Date.now() - startTime) / 1000);
-
-            const tournamentTime = 150 - elapsed;
-
-            if (tournamentTime <= 0) {
-
-                clearInterval(tournamentTimers[tournamentId]);
-                delete tournamentTimers[tournamentId];
-
-                io.to(tournamentId).emit("tournamentEnded");
-
-                return;
-            }
-
-            io.to(tournamentId).emit("tournamentTimer", tournamentTime);
-
-        } catch (err) {
-            console.log("Timer Error:", err);
-        }
-
     }, 1000);
 }
 
