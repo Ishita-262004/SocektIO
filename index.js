@@ -572,7 +572,17 @@ function startTournamentAgain(tournamentId, roomId) {
 
     restarting[roomId] = true;
 
-    tournamentState[tournamentId] = { startTime: Date.now() };
+    // Clear previous timer safely
+    if (tournamentTimers[tournamentId]) {
+        clearInterval(tournamentTimers[tournamentId]);
+        delete tournamentTimers[tournamentId];
+    }
+
+    // Create new tournament start time
+    tournamentState[tournamentId] = {
+        startTime: Date.now()
+    };
+
     startTournamentTimer(tournamentId);
 
     // Reset coins
@@ -644,6 +654,10 @@ function startTournamentTimer(tournamentId) {
 
     if (tournamentTimers[tournamentId]) return;
 
+    if (!tournamentState[tournamentId]) {
+        tournamentState[tournamentId] = { startTime: Date.now() };
+    }
+
     const startTime = tournamentState[tournamentId].startTime;
     const endTime = startTime + TOURNAMENT_TIME * 1000;
 
@@ -692,7 +706,6 @@ function startTournamentTimer(tournamentId) {
         if (tournamentTime <= 0) {
             clearInterval(tournamentTimers[tournamentId]);
             delete tournamentTimers[tournamentId];
-            delete tournamentState[tournamentId]; // ⭐ reset for next tournament
         }
     }, 1000);
 }
