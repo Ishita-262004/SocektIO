@@ -572,17 +572,7 @@ function startTournamentAgain(tournamentId, roomId) {
 
     restarting[roomId] = true;
 
-    // Clear previous timer safely
-    if (tournamentTimers[tournamentId]) {
-        clearInterval(tournamentTimers[tournamentId]);
-        delete tournamentTimers[tournamentId];
-    }
-
-    // Create new tournament start time
-    tournamentState[tournamentId] = {
-        startTime: Date.now()
-    };
-
+    tournamentState[tournamentId] = { startTime: Date.now() };
     startTournamentTimer(tournamentId);
 
     // Reset coins
@@ -654,11 +644,7 @@ function startTournamentTimer(tournamentId) {
 
     if (tournamentTimers[tournamentId]) return;
 
-   if (!tournamentState[tournamentId]) {
-    tournamentState[tournamentId] = { startTime: Date.now() };
-}
-
-const startTime = tournamentState[tournamentId].startTime;
+    const startTime = tournamentState[tournamentId].startTime;
     const endTime = startTime + TOURNAMENT_TIME * 1000;
 
     tournamentTimers[tournamentId] = setInterval(() => {
