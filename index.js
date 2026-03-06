@@ -434,6 +434,10 @@ function createMatches(tournamentId) {
 }
 
 function startResultTimer(tournamentId, roomId) {
+    if (tournamentTimers[tournamentId]) {
+        clearInterval(tournamentTimers[tournamentId]);
+        delete tournamentTimers[tournamentId];
+    }
     let resultTime = 15;
     lobbies[tournamentId].resultTimeRunning = true;
     io.to(tournamentId).emit("LOBBY_CLOSED");
@@ -572,7 +576,6 @@ function startTournamentAgain(tournamentId, roomId) {
 
     restarting[roomId] = true;
 
-    tournamentState[tournamentId] = { startTime: Date.now() };
     startTournamentTimer(tournamentId);
 
     // Reset coins
@@ -622,13 +625,13 @@ function hardResetRoom(roomId) {
     }
 }
 
-const TOURNAMENT_TIME = 150;
+const TOURNAMENT_TIME = 50;
 //const ROUND_TIME = 40;
 
 const tournamentTimers = {};
 const tournamentState = {};
 
-function startTournamentTimer(tournamentId) {
+/*function startTournamentTimer(tournamentId) {
 
     const lobby = lobbies[tournamentId];
 
@@ -661,12 +664,12 @@ function startTournamentTimer(tournamentId) {
             //roundTime
         });
 
-        /*if (round !== lastRound && !lobby.roundProcessed[round]) {*/
+        *//*if (round !== lastRound && !lobby.roundProcessed[round]) {*//*
 
         // lastRound = round;
         //  lobby.roundProcessed[round] = true;  // ⭐ PREVENT DOUBLE TRIGGER
 
-        /*if (Object.keys(lobby.waitingUsers).length > 0) {
+        *//*if (Object.keys(lobby.waitingUsers).length > 0) {
 
             createMatchesForNewUsers(tournamentId, lobby.waitingUsers);
 
@@ -682,20 +685,53 @@ function startTournamentTimer(tournamentId) {
             });
 
             console.log("New users joined at start of round:", round);
-        }*/
-        /* }*/
+        }*//*
+        *//* }*//*
 
         // END OF TOURNAMENT
-        /*if (tournamentTime <= 0) {
+        *//*if (tournamentTime <= 0) {
             clearInterval(tournamentTimers[tournamentId]);
-        }*/
+        }*//*
         if (tournamentTime <= 0) {
             clearInterval(tournamentTimers[tournamentId]);
             delete tournamentTimers[tournamentId];
         }
     }, 1000);
-}
+}*/
+function startTournamentTimer(tournamentId) {
 
+    // ALWAYS clear old timer
+    if (tournamentTimers[tournamentId]) {
+        clearInterval(tournamentTimers[tournamentId]);
+        delete tournamentTimers[tournamentId];
+    }
+
+    // ALWAYS reset start time
+    tournamentState[tournamentId] = {
+        startTime: Date.now()
+    };
+
+    const startTime = tournamentState[tournamentId].startTime;
+    const endTime = startTime + TOURNAMENT_TIME * 1000;
+
+    tournamentTimers[tournamentId] = setInterval(() => {
+
+        const now = Date.now();
+
+        const tournamentTime = Math.max(0, Math.ceil((endTime - now) / 1000));
+
+        io.to(tournamentId).emit("TOURNAMENT_STATE", {
+            tournamentTime
+        });
+
+        // End tournament safely
+        if (tournamentTime <= 0) {
+            clearInterval(tournamentTimers[tournamentId]);
+            delete tournamentTimers[tournamentId];
+        }
+
+    }, 1000);
+}
 
 function createMatchesForNewUsers(tournamentId, newUsers) {
 
