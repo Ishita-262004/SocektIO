@@ -19,7 +19,7 @@ const lobbies = {
 const roomResults = {};
 const liveCoins = {};
 const restarting = {};
-
+const resultTimers = {};
 
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
@@ -195,6 +195,11 @@ io.on("connection", (socket) => {
         }
 
         if (!roomResults[roomId]) roomResults[roomId] = {};
+
+       // roomResults[roomId][username] = coins;
+        if (roomResults[roomId][username] !== undefined) {
+            return; // already submitted result
+        }
 
         roomResults[roomId][username] = coins;
 
@@ -433,7 +438,7 @@ function createMatches(tournamentId) {
     startTournamentTimer(tournamentId);
 }
 
-function startResultTimer(tournamentId, roomId) {
+/*function startResultTimer(tournamentId, roomId) {
     if (tournamentTimers[tournamentId]) {
         clearInterval(tournamentTimers[tournamentId]);
         delete tournamentTimers[tournamentId];
@@ -446,12 +451,12 @@ function startResultTimer(tournamentId, roomId) {
 
         resultTime--;
 
-        /* if (resultTime < 0) {
+        *//* if (resultTime < 0) {
              clearInterval(interval);
              lobbies[tournamentId].resultTimeRunning = false;
              // after result timer finish → reset tournament
              resetTournament(tournamentId);
-         }*/
+         }*//*
 
         if (resultTime < 0) {
             clearInterval(interval);
@@ -490,6 +495,46 @@ function startResultTimer(tournamentId, roomId) {
             // resetTournament(tournamentId);
 
         }
+    }, 1000);
+}*/
+function startResultTimer(tournamentId, roomId) {
+
+    // ⭐ Prevent multiple result timers
+    if (resultTimers[tournamentId]) {
+        return;
+    }
+
+    let resultTime = 15;
+    lobbies[tournamentId].resultTimeRunning = true;
+
+    resultTimers[tournamentId] = setInterval(() => {
+
+        io.to(roomId).emit("RESULT_TIMER", { resultTime });
+
+        resultTime--;
+
+        if (resultTime < 0) {
+
+            clearInterval(resultTimers[tournamentId]);
+            delete resultTimers[tournamentId];
+
+            lobbies[tournamentId].resultTimeRunning = false;
+
+            const finalScores = roomResults[roomId] || {};
+
+            const ranking = Object.keys(finalScores)
+                .sort((a, b) => finalScores[b] - finalScores[a])
+                .map((username, index) => ({
+                    username,
+                    rank: index + 1
+                }));
+
+            io.to(roomId).emit("PRIZE_RANK", ranking);
+            io.to(tournamentId).emit("PRIZE_RANK", ranking);
+
+            startTournamentAgain(tournamentId, roomId);
+        }
+
     }, 1000);
 }
 
@@ -543,7 +588,10 @@ function startResultTimer(tournamentId, roomId) {
 function startTournamentAgain(tournamentId, roomId) {
 
     console.log("Restarting tournament in SAME ROOM:", roomId);
-
+    if (tournamentTimers[tournamentId]) {
+        clearInterval(tournamentTimers[tournamentId]);
+        delete tournamentTimers[tournamentId];
+    }
     hardResetRoom(roomId);
 
     const lobby = lobbies[tournamentId];
