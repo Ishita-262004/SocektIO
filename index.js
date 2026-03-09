@@ -34,7 +34,8 @@ io.on("connection", (socket) => {
                 gameStarted: false,
                 waitingUsers: {},
                 roundProcessed: {},
-                resultTimeRunning: false
+                resultTimeRunning: false,
+                resultProcessed: false
             };
         }
 
@@ -201,16 +202,16 @@ io.on("connection", (socket) => {
         const expected = Object.keys(rooms[roomId].users || {}).length;
         const received = Object.keys(roomResults[roomId]).length;
 
-        if (expected > 0 && received === expected) {
+        if (expected > 0 && received === expected && !lobbies[tournamentId].resultProcessed) {
+
+            lobbies[tournamentId].resultProcessed = true;
+
             io.to(roomId).emit("TOURNAMENT_RESULT", roomResults[roomId]);
 
             const tournamentId = roomId.split("_ROOM_")[0];
 
-            if (!lobbies[tournamentId].resultTimeRunning) {
-                startResultTimer(tournamentId, roomId);
-            }
+            startResultTimer(tournamentId, roomId);
         }
-
     });
 
 
@@ -311,7 +312,10 @@ const LOBBY_TIME = 40;
 
 function startLobbyTimer(tournamentId) {
     const lobby = lobbies[tournamentId];
-    if (lobby.lobbyInterval) return;
+    if (lobby.lobbyInterval) {
+        clearInterval(lobby.lobbyInterval);
+        lobby.lobbyInterval = null;
+    }
     /* if (lobby.lobbyInterval !== null) {
          clearInterval(lobby.lobbyInterval);
          lobby.lobbyInterval = null;
@@ -548,11 +552,8 @@ function startTournamentAgain(tournamentId, roomId) {
 
     hardResetRoom(roomId);
 
-    roomResults[roomId] = {};
-    liveCoins[roomId] = {};
-
     const lobby = lobbies[tournamentId];
-
+    lobby.resultProcessed = false;
     // Tournament restarts, NOW we add waiting users
     for (const username in lobby.waitingUsers) {
         const user = lobby.waitingUsers[username];
@@ -580,6 +581,14 @@ function startTournamentAgain(tournamentId, roomId) {
     lobby.currentRoomId = roomId;
 
     restarting[roomId] = true;
+
+    // FULL RESET BEFORE NEW TOURNAMENT
+    if (tournamentTimers[tournamentId]) {
+        clearInterval(tournamentTimers[tournamentId]);
+        delete tournamentTimers[tournamentId];
+    }
+
+    delete tournamentState[tournamentId];
 
     startTournamentTimer(tournamentId);
 
@@ -705,11 +714,12 @@ const tournamentState = {};
 }*/
 function startTournamentTimer(tournamentId) {
 
+    // ALWAYS clear old timer
     if (tournamentTimers[tournamentId]) {
         clearInterval(tournamentTimers[tournamentId]);
+        delete tournamentTimers[tournamentId];
     }
 
-    tournamentTimers[tournamentId] = null;
     // ALWAYS reset start time
     tournamentState[tournamentId] = {
         startTime: Date.now()
