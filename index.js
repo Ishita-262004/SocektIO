@@ -630,7 +630,7 @@ function hardResetRoom(roomId) {
     }
 }
 
-const TOURNAMENT_TIME = 30;
+const TOURNAMENT_TIME = 100;
 //const ROUND_TIME = 40;
 
 const tournamentTimers = {};
