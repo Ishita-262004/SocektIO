@@ -74,6 +74,30 @@ io.on("connection", (socket) => {
         if (lobby.users[username]) {
             lobby.users[username].socketId = socket.id;
             lobby.users[username].disconnected = false;
+
+            // ⭐ REJOIN ROOM AFTER RECONNECT
+            const roomId = lobby.currentRoomId;
+
+            if (roomId && rooms[roomId] && rooms[roomId].users[username]) {
+                socket.join(roomId);
+
+                console.log(username, "rejoined room", roomId);
+
+                // send current users again
+                socket.emit("ROOM_USERS", {
+                    users: rooms[roomId].users
+                });
+
+                // send live coins again
+                if (liveCoins[roomId]) {
+                    for (const u in liveCoins[roomId]) {
+                        socket.emit("TOURNAMENT_COIN_UPDATE", {
+                            username: u,
+                            coins: liveCoins[roomId][u]
+                        });
+                    }
+                }
+            }
         }
         else {
             lobby.users[username] = {
@@ -300,11 +324,18 @@ io.on("connection", (socket) => {
     socket.on("disconnect", () => {
         console.log("Disconnect detected:", socket.id);
 
-        // Wait 5 seconds before removing
+        // DON'T remove immediately
         setTimeout(() => {
-            removeUserEverywhere(null, socket.id);
-            console.log("User fully removed after timeout:", socket.id);
-        }, 3000);
+
+            const stillConnected = Array.from(io.sockets.sockets.values())
+                .some(s => s.id === socket.id);
+
+            if (!stillConnected) {
+                removeUserEverywhere(null, socket.id);
+                console.log("User removed after disconnect timeout");
+            }
+
+        }, 5000); // wait 10 seconds
     });
 
 });
