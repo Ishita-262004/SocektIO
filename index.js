@@ -226,7 +226,7 @@ io.on("connection", (socket) => {
 
         console.log("RESULT RECEIVED:", username, coins);
 
-        const expected = Object.keys(rooms[roomId].users || {}).length;
+        const expected = Object.keys(liveCoins[roomId] || {}).length;
         const received = Object.keys(roomResults[roomId]).length;
 
         console.log("RESULT STATUS:", received, "/", expected);
@@ -324,47 +324,22 @@ io.on("connection", (socket) => {
 
 
     socket.on("disconnect", () => {
+
         console.log("Disconnect detected:", socket.id);
 
-        setTimeout(() => {
+        // DO NOT remove player if tournament running
+        for (const tId in lobbies) {
 
-            // Find username by old socket id
-            let username = null;
+            const lobby = lobbies[tId];
 
-            for (const tId in lobbies) {
-                const lobby = lobbies[tId];
-
-                for (const u in lobby.users) {
-                    if (lobby.users[u].socketId === socket.id) {
-                        username = u;
-                    }
-                }
-
-                for (const u in lobby.waitingUsers) {
-                    if (lobby.waitingUsers[u].socketId === socket.id) {
-                        username = u;
-                    }
-                }
+            if (lobby.gameStarted) {
+                console.log("Player disconnected but tournament running → keep player");
+                return;
             }
+        }
 
-            if (!username) return;
+        removeUserEverywhere(null, socket.id);
 
-            // Check if user already reconnected with new socket
-            let reconnected = false;
-
-            for (const s of io.sockets.sockets.values()) {
-                if (s.username === username) {
-                    reconnected = true;
-                    break;
-                }
-            }
-
-            if (!reconnected) {
-                removeUserEverywhere(username, socket.id);
-                console.log("User removed after disconnect timeout:", username);
-            }
-
-        }, 15000); // wait longer
     });
 });
 
