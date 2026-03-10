@@ -26,6 +26,8 @@ io.on("connection", (socket) => {
 
     socket.on("USERNAME", ({ username, avatar, tournamentId }) => {
 
+        socket.username = username;
+
         if (!lobbies[tournamentId]) {
             lobbies[tournamentId] = {
                 users: {},
@@ -324,20 +326,46 @@ io.on("connection", (socket) => {
     socket.on("disconnect", () => {
         console.log("Disconnect detected:", socket.id);
 
-        // DON'T remove immediately
         setTimeout(() => {
 
-            const stillConnected = Array.from(io.sockets.sockets.values())
-                .some(s => s.id === socket.id);
+            // Find username by old socket id
+            let username = null;
 
-            if (!stillConnected) {
-                removeUserEverywhere(null, socket.id);
-                console.log("User removed after disconnect timeout");
+            for (const tId in lobbies) {
+                const lobby = lobbies[tId];
+
+                for (const u in lobby.users) {
+                    if (lobby.users[u].socketId === socket.id) {
+                        username = u;
+                    }
+                }
+
+                for (const u in lobby.waitingUsers) {
+                    if (lobby.waitingUsers[u].socketId === socket.id) {
+                        username = u;
+                    }
+                }
             }
 
-        }, 5000); // wait 10 seconds
-    });
+            if (!username) return;
 
+            // Check if user already reconnected with new socket
+            let reconnected = false;
+
+            for (const s of io.sockets.sockets.values()) {
+                if (s.username === username) {
+                    reconnected = true;
+                    break;
+                }
+            }
+
+            if (!reconnected) {
+                removeUserEverywhere(username, socket.id);
+                console.log("User removed after disconnect timeout:", username);
+            }
+
+        }, 15000); // wait longer
+    });
 });
 
 const LOBBY_TIME = 40;
