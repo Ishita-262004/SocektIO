@@ -27,6 +27,7 @@ io.on("connection", (socket) => {
     socket.on("USERNAME", ({ username, avatar, tournamentId }) => {
 
         socket.username = username;
+
         if (!lobbies[tournamentId]) {
             lobbies[tournamentId] = {
                 users: {},
@@ -173,6 +174,11 @@ io.on("connection", (socket) => {
                 users: rooms[roomId].users
             });
         }
+
+        if (roomResults[roomId] && Object.keys(roomResults[roomId]).length > 0) {
+            socket.emit("TOURNAMENT_RESULT", roomResults[roomId]);
+        }
+
         /*  for (const user in liveCoins[roomId]) {
               socket.emit("TOURNAMENT_COIN_UPDATE", {
                   username: user,
