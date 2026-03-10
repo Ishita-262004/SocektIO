@@ -175,6 +175,19 @@ io.on("connection", (socket) => {
             });
         }
 
+        // SEND RESULT ONLY IF RESULT TIMER IS RUNNING
+        const tournamentId = roomId.split("_ROOM_")[0];
+        const lobby = lobbies[tournamentId];
+
+        if (
+            lobby &&
+            lobby.resultTimeRunning &&
+            roomResults[roomId] &&
+            Object.keys(roomResults[roomId]).length > 0
+        ) {
+            socket.emit("TOURNAMENT_RESULT", roomResults[roomId]);
+        }
+
         /*  for (const user in liveCoins[roomId]) {
               socket.emit("TOURNAMENT_COIN_UPDATE", {
                   username: user,
