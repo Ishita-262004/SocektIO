@@ -386,8 +386,7 @@ io.to(tournamentId).emit("USER_LIST", lobby.users);
 function createMatches(tournamentId) {
     const lobby = lobbies[tournamentId];
     if (!lobby) return;
-    console.log("=== TOURNAMENT START ===", tournamentId);
-    console.log("Players:", Object.keys(rooms[roomId].users));
+   
     lobby.gameStarted = true;
 
     const usernames = Object.keys(lobby.users);
@@ -396,6 +395,9 @@ function createMatches(tournamentId) {
     const roomId = tournamentId + "_ROOM_1";
     rooms[roomId] = { users: {} };
     lobby.currentRoomId = roomId;
+
+    console.log("=== TOURNAMENT START ===", tournamentId);
+    console.log("Players:", usernames);
 
     liveCoins[roomId] = {};
     roomResults[roomId] = {};
