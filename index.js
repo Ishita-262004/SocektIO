@@ -77,6 +77,22 @@ io.on("connection", (socket) => {
             lobby.users[username].socketId = socket.id;
             lobby.users[username].disconnected = false;
 
+            const roomId = lobby.currentRoomId;
+
+            // ⭐ REJOIN ROOM
+            if (roomId && rooms[roomId] && rooms[roomId].users[username]) {
+                socket.join(roomId);
+
+                socket.emit("ROOM_USERS", {
+                    users: rooms[roomId].users
+                });
+            }
+
+            // ⭐ FIX: resend result if already calculated
+            if (roomId && roomResults[roomId] && Object.keys(roomResults[roomId]).length > 0) {
+                socket.emit("TOURNAMENT_RESULT", roomResults[roomId]);
+            }
+
             // ⭐ REJOIN ROOM AFTER RECONNECT
             const roomId = lobby.currentRoomId;
 
