@@ -188,6 +188,7 @@ io.on("connection", (socket) => {
 
     });*/
     socket.on("TOURNAMENT_PLAYER_RESULT", ({ roomId, username, coins }) => {
+        console.log("RESULT RECEIVED:", username, coins);
 
         if (!rooms[roomId]) {
             console.warn(`Room ${roomId} not found for result from ${username}`);
@@ -200,6 +201,8 @@ io.on("connection", (socket) => {
 
         const expected = Object.keys(rooms[roomId].users || {}).length;
         const received = Object.keys(roomResults[roomId]).length;
+
+        console.log("RESULT STATUS:", received, "/", expected);
 
         if (expected > 0 && received === expected) {
             io.to(roomId).emit("TOURNAMENT_RESULT", roomResults[roomId]);
@@ -382,7 +385,8 @@ io.to(tournamentId).emit("USER_LIST", lobby.users);
 function createMatches(tournamentId) {
     const lobby = lobbies[tournamentId];
     if (!lobby) return;
-
+    console.log("=== TOURNAMENT START ===", tournamentId);
+    console.log("Players:", Object.keys(rooms[roomId].users));
     lobby.gameStarted = true;
 
     const usernames = Object.keys(lobby.users);
@@ -438,11 +442,14 @@ function startResultTimer(tournamentId, roomId) {
         clearInterval(tournamentTimers[tournamentId]);
         delete tournamentTimers[tournamentId];
     }
+    console.log("START RESULT TIMER:", tournamentId);
     let resultTime = 15;
     lobbies[tournamentId].resultTimeRunning = true;
     io.to(tournamentId).emit("LOBBY_CLOSED");
     const interval = setInterval(() => {
         io.to(roomId).emit("RESULT_TIMER", { resultTime });
+
+        console.log("RESULT TIME:", resultTime);
 
         resultTime--;
 
@@ -656,6 +663,7 @@ function startTournamentAgain(tournamentId, roomId) {
 }
 
 function startTournamentTimer(tournamentId) {
+    console.log("START TOURNAMENT TIMER:", tournamentId);
     if (tournamentTimers[tournamentId]) {
         clearInterval(tournamentTimers[tournamentId]);
         delete tournamentTimers[tournamentId];
@@ -669,9 +677,12 @@ function startTournamentTimer(tournamentId) {
         const now = Date.now();
         const tournamentTime = Math.max(0, Math.ceil((endTime - now) / 1000));
 
+        console.log("TOURNAMENT", tournamentId, "TIME:", tournamentTime);
+
         io.to(tournamentId).emit("TOURNAMENT_STATE", { tournamentTime });
 
         if (tournamentTime <= 0) {
+            console.log("TOURNAMENT FINISHED:", tournamentId);
             clearInterval(tournamentTimers[tournamentId]);
             delete tournamentTimers[tournamentId];
         }
@@ -871,7 +882,7 @@ function resetTournament(tournamentId) {
 
 
 function removeUserEverywhere(username, socketId) {
-
+    console.log("REMOVE USER:", username);
     // Find username if missing
     if (!username && socketId) {
         for (const tId in lobbies) {
