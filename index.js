@@ -188,7 +188,6 @@ io.on("connection", (socket) => {
 
     });*/
     socket.on("TOURNAMENT_PLAYER_RESULT", ({ roomId, username, coins }) => {
-        console.log("RESULT RECEIVED:", username, coins);
 
         if (!rooms[roomId]) {
             console.warn(`Room ${roomId} not found for result from ${username}`);
@@ -198,6 +197,8 @@ io.on("connection", (socket) => {
         if (!roomResults[roomId]) roomResults[roomId] = {};
 
         roomResults[roomId][username] = coins;
+
+        console.log("RESULT RECEIVED:", username, coins);
 
         const expected = Object.keys(rooms[roomId].users || {}).length;
         const received = Object.keys(roomResults[roomId]).length;
@@ -442,14 +443,14 @@ function startResultTimer(tournamentId, roomId) {
         clearInterval(tournamentTimers[tournamentId]);
         delete tournamentTimers[tournamentId];
     }
-    console.log("START RESULT TIMER:", tournamentId);
     let resultTime = 15;
+
+    console.log("START RESULT TIMER:", tournamentId);
+
     lobbies[tournamentId].resultTimeRunning = true;
     io.to(tournamentId).emit("LOBBY_CLOSED");
     const interval = setInterval(() => {
         io.to(roomId).emit("RESULT_TIMER", { resultTime });
-
-        console.log("RESULT TIME:", resultTime);
 
         resultTime--;
 
@@ -547,7 +548,7 @@ function startResultTimer(tournamentId, roomId) {
 
     }, 2000);
 }*/
-/*function startTournamentAgain(tournamentId, roomId) {
+function startTournamentAgain(tournamentId, roomId) {
 
     console.log("Restarting tournament in SAME ROOM:", roomId);
 
@@ -612,81 +613,6 @@ function startResultTimer(tournamentId, roomId) {
         }
 
     }, 2000);
-}*/
-function startTournamentAgain(tournamentId, roomId) {
-    console.log("Restarting tournament in SAME ROOM:", roomId);
-
-    const lobby = lobbies[tournamentId];
-    if (!lobby) return;
-
-    // Merge waiting users
-    for (const username in lobby.waitingUsers) {
-        const user = lobby.waitingUsers[username];
-        const s = io.sockets.sockets.get(user.socketId);
-        if (!s) continue;
-        s.join(roomId);
-        rooms[roomId].users[username] = { ...user };
-        lobby.users[username] = { ...user };
-    }
-    lobby.waitingUsers = {};
-
-    // Reset tournament state
-    lobby.gameStarted = true;
-    lobby.resultTimeRunning = false;
-
-    // Reset coins and results
-    for (const username in rooms[roomId].users) {
-        liveCoins[roomId][username] = 0;
-        roomResults[roomId][username] = 0;
-        rooms[roomId].users[username].coins = 0;
-    }
-
-    // Start tournament timer safely
-    startTournamentTimer(tournamentId);
-
-    // Emit room info
-    io.to(roomId).emit("MATCH_FOUND", {
-        roomId,
-        players: Object.values(rooms[roomId].users)
-    });
-
-    // Delay UI updates to prevent client race
-    setTimeout(() => {
-        io.to(roomId).emit("ROOM_USERS", { users: rooms[roomId].users });
-        for (const username in rooms[roomId].users) {
-            io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", {
-                username,
-                coins: 0
-            });
-        }
-    }, 500); // half-second delay
-}
-
-function startTournamentTimer(tournamentId) {
-    console.log("START TOURNAMENT TIMER:", tournamentId);
-    if (tournamentTimers[tournamentId]) {
-        clearInterval(tournamentTimers[tournamentId]);
-        delete tournamentTimers[tournamentId];
-    }
-
-    tournamentState[tournamentId] = { startTime: Date.now() };
-    const startTime = tournamentState[tournamentId].startTime;
-    const endTime = startTime + TOURNAMENT_TIME * 1000;
-
-    tournamentTimers[tournamentId] = setInterval(() => {
-        const now = Date.now();
-        const tournamentTime = Math.max(0, Math.ceil((endTime - now) / 1000));
-
-        console.log("TOURNAMENT", tournamentId, "TIME:", tournamentTime);
-
-        io.to(tournamentId).emit("TOURNAMENT_STATE", { tournamentTime });
-
-        if (tournamentTime <= 0) {
-            console.log("TOURNAMENT FINISHED:", tournamentId);
-            clearInterval(tournamentTimers[tournamentId]);
-            delete tournamentTimers[tournamentId];
-        }
-    }, 1000);
 }
 function hardResetRoom(roomId) {
     // Wipe live coins
@@ -781,6 +707,7 @@ const tournamentState = {};
     }, 1000);
 }*/
 function startTournamentTimer(tournamentId) {
+    console.log("START TOURNAMENT TIMER:", tournamentId);
 
     // ALWAYS clear old timer
     if (tournamentTimers[tournamentId]) {
@@ -802,12 +729,15 @@ function startTournamentTimer(tournamentId) {
 
         const tournamentTime = Math.max(0, Math.ceil((endTime - now) / 1000));
 
+        console.log("TOURNAMENT", tournamentId, "TIME:", tournamentTime);
+
         io.to(tournamentId).emit("TOURNAMENT_STATE", {
             tournamentTime
         });
 
         // End tournament safely
         if (tournamentTime <= 0) {
+            console.log("TOURNAMENT FINISHED:", tournamentId);
             clearInterval(tournamentTimers[tournamentId]);
             delete tournamentTimers[tournamentId];
         }
@@ -882,7 +812,7 @@ function resetTournament(tournamentId) {
 
 
 function removeUserEverywhere(username, socketId) {
-    console.log("REMOVE USER:", username);
+
     // Find username if missing
     if (!username && socketId) {
         for (const tId in lobbies) {
