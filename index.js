@@ -213,7 +213,7 @@ io.on("connection", (socket) => {
         }
 
     });*/
-   /* socket.on("TOURNAMENT_PLAYER_RESULT", ({ roomId, username, coins }) => {
+    socket.on("TOURNAMENT_PLAYER_RESULT", ({ roomId, username, coins }) => {
 
         if (!rooms[roomId]) {
             console.warn(`Room ${roomId} not found for result from ${username}`);
@@ -239,45 +239,8 @@ io.on("connection", (socket) => {
             startResultTimer(tournamentId, roomId);
         }
 
-    });*/
-    // Add a global object to track timers
-    const resultForceTimers = {};
-
-    socket.on("TOURNAMENT_PLAYER_RESULT", ({ roomId, username, coins }) => {
-        if (!rooms[roomId]) return;
-        if (!roomResults[roomId]) roomResults[roomId] = {};
-
-        roomResults[roomId][username] = coins;
-
-        const roomUsers = Object.keys(rooms[roomId].users);
-        const receivedResults = Object.keys(roomResults[roomId]);
-
-        // Check how many users are actually CONNECTED right now
-        const activeUsers = roomUsers.filter(u => {
-            const userObj = rooms[roomId].users[u];
-            const s = io.sockets.sockets.get(userObj.socketId);
-            return s && s.connected;
-        });
-
-        console.log(`Results: ${receivedResults.length} / ${activeUsers.length} (Active)`);
-
-        // If we have results from all currently active users, OR everyone
-        if (receivedResults.length >= activeUsers.length) {
-            // Clear any existing force-timer
-            if (resultForceTimers[roomId]) clearTimeout(resultForceTimers[roomId]);
-
-            sendFinalResults(roomId);
-        } else {
-            // SAFETY: If someone is lagging/disconnected, force results after 5 seconds anyway
-            if (!resultForceTimers[roomId]) {
-                resultForceTimers[roomId] = setTimeout(() => {
-                    sendFinalResults(roomId);
-                }, 5000);
-            }
-        }
     });
 
-   
 
     socket.on("TOURNAMENT_COIN_UPDATE", ({ username, roomId, coins }) => {
 
@@ -379,18 +342,6 @@ io.on("connection", (socket) => {
 
     });
 });
-
-function sendFinalResults(roomId) {
-    if (!roomResults[roomId]) return;
-
-    io.to(roomId).emit("TOURNAMENT_RESULT", roomResults[roomId]);
-
-    const tournamentId = roomId.split("_ROOM_")[0];
-    startResultTimer(tournamentId, roomId);
-
-    // Clean up
-    delete resultForceTimers[roomId];
-}
 
 const LOBBY_TIME = 40;
 
