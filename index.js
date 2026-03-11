@@ -77,11 +77,26 @@ io.on("connection", (socket) => {
             lobby.users[username].socketId = socket.id;
             lobby.users[username].disconnected = false;
 
+            if (tournamentState[tournamentId]) {
+
+                const startTime = tournamentState[tournamentId].startTime;
+                const endTime = startTime + TOURNAMENT_TIME * 1000;
+
+                const now = Date.now();
+                const tournamentTime = Math.max(0, Math.ceil((endTime - now) / 1000));
+
+                socket.emit("TOURNAMENT_STATE", {
+                    tournamentTime: tournamentTime
+                });
+            }
+
             // ⭐ REJOIN ROOM AFTER RECONNECT
             const roomId = lobby.currentRoomId;
 
             if (roomId && rooms[roomId] && rooms[roomId].users[username]) {
                 socket.join(roomId);
+
+                rooms[roomId].users[username].socketId = socket.id;
 
                 console.log(username, "rejoined room", roomId);
 
@@ -231,7 +246,7 @@ io.on("connection", (socket) => {
 
         console.log("RESULT STATUS:", received, "/", expected);
 
-        if (expected > 0 && received === expected) {
+        /*if (expected > 0 && received === expected)*/ if (received >= expected) {
             io.to(roomId).emit("TOURNAMENT_RESULT", roomResults[roomId]);
 
             const tournamentId = roomId.split("_ROOM_")[0];
