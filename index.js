@@ -323,8 +323,8 @@ io.on("connection", (socket) => {
     });*/
 
 
-    /*socket.on("disconnect", () => {
-        console.log("Disconnect detected:", socket.id, "Reason:", reason);
+    socket.on("disconnect", () => {
+       // console.log("Disconnect detected:", socket.id, "Reason:", reason);
 
         // DO NOT remove player if tournament running
         for (const tId in lobbies) {
@@ -339,22 +339,22 @@ io.on("connection", (socket) => {
 
         removeUserEverywhere(null, socket.id);
 
-    });*/
-
-    socket.on("disconnect", (reason) => {
-        console.log("Disconnect detected:", socket.id, "Reason:", reason);
-
-        // DO NOT remove player if tournament running
-        for (const tId in lobbies) {
-            const lobby = lobbies[tId];
-            if (lobby.gameStarted) {
-                console.log("Player disconnected but tournament running → keep player");
-                return;
-            }
-        }
-
-        removeUserEverywhere(null, socket.id);
     });
+
+    /*socket.on("disconnect", (reason) => {
+        console.log("Disconnect detected:", socket.id, "Reason:", reason);
+
+        // DO NOT remove player if tournament running
+        for (const tId in lobbies) {
+            const lobby = lobbies[tId];
+            if (lobby.gameStarted) {
+                console.log("Player disconnected but tournament running → keep player");
+                return;
+            }
+        }
+
+        removeUserEverywhere(null, socket.id);
+    });*/
 });
 
 const LOBBY_TIME = 40;
