@@ -217,7 +217,7 @@ io.on("connection", (socket) => {
 
         if (!rooms[roomId]) {
             console.warn(`Room ${roomId} not found for result from ${username}`);
-            return; // Stop if room does not exist
+            return;
         }
 
         if (!roomResults[roomId]) roomResults[roomId] = {};
@@ -226,7 +226,7 @@ io.on("connection", (socket) => {
 
         console.log("RESULT RECEIVED:", username, coins);
 
-        const expected = Object.keys(liveCoins[roomId] || {}).length;
+        const expected = Object.keys(rooms[roomId]?.users || {}).length;
         const received = Object.keys(roomResults[roomId]).length;
 
         console.log("RESULT STATUS:", received, "/", expected);
@@ -235,12 +235,10 @@ io.on("connection", (socket) => {
             io.to(roomId).emit("TOURNAMENT_RESULT", roomResults[roomId]);
 
             const tournamentId = roomId.split("_ROOM_")[0];
-
             startResultTimer(tournamentId, roomId);
         }
 
     });
-
 
     socket.on("TOURNAMENT_COIN_UPDATE", ({ username, roomId, coins }) => {
 
