@@ -322,8 +322,7 @@ io.on("connection", (socket) => {
 
 
     socket.on("disconnect", () => {
-
-        console.log("Disconnect detected:", socket.id);
+        console.log("Disconnect detected:", socket.id, "Reason:", reason);
 
         // DO NOT remove player if tournament running
         for (const tId in lobbies) {
