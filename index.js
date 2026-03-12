@@ -228,8 +228,9 @@ io.on("connection", (socket) => {
 
         console.log("RESULT RECEIVED:", username, coins);
 
-        const expected = Object.keys(rooms[roomId]?.users || {}).length;
-        const received = Object.keys(roomResults[roomId]).length;
+        const activeUsers = Object.keys(rooms[roomId]?.users || {});
+        const expected = activeUsers.length;
+        const received = Object.keys(roomResults[roomId]).filter(u => activeUsers.includes(u)).length;
 
         console.log("RESULT STATUS:", received, "/", expected);
 
