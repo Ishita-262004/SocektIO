@@ -794,7 +794,7 @@ function startTournamentTimer(tournamentId) {
 
         const tournamentTime = Math.max(0, Math.ceil((endTime - now) / 1000));
 
-        console.log("TOURNAMENT", tournamentId, "TIME:", tournamentTime);
+       // console.log("TOURNAMENT", tournamentId, "TIME:", tournamentTime);
 
         io.to(tournamentId).emit("TOURNAMENT_STATE", {
             tournamentTime
