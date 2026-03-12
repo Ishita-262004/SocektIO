@@ -272,6 +272,11 @@ io.on("connection", (socket) => {
         const tournamentId = roomId.split("_ROOM_")[0];
         const lobby = lobbies[tournamentId];
 
+        if (rooms[roomId] && rooms[roomId].users[username]) {
+            delete rooms[roomId].users[username];
+        }
+
+
         if (roomResults[roomId]) {
             delete roomResults[roomId][username];
         }
