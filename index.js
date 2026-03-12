@@ -271,6 +271,15 @@ io.on("connection", (socket) => {
         const tournamentId = roomId.split("_ROOM_")[0];
         const lobby = lobbies[tournamentId];
 
+        if (roomResults[roomId]) {
+            delete roomResults[roomId][username];
+        }
+
+        // ⭐ REMOVE USER LIVE COINS
+        if (liveCoins[roomId]) {
+            delete liveCoins[roomId][username];
+        }
+
         removeUserEverywhere(username, socket.id);
         socket.leave(roomId);
 
