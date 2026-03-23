@@ -423,19 +423,14 @@ function startLobbyTimer(tournamentId) {
          clearInterval(lobby.lobbyInterval);
          lobby.lobbyInterval = null;
      }*/
+         if (lobby.lobbyInterval) {
+            return;
+        }
          console.log("TOURNAMENT:", tournamentId);
          console.log("LOBBY EXISTS:", !!lobbies[tournamentId]);
          console.log("LOBBY TIMER:", lobby?.lobbyInterval);
          console.log("BOT TIMER:", lobby?.botInterval);
-         if (lobby.lobbyInterval) {
-            clearInterval(lobby.lobbyInterval);
-            lobby.lobbyInterval = null;
-        }
-    
-        if (lobby.botInterval) {
-            clearInterval(lobby.botInterval);
-            lobby.botInterval = null;
-        }
+
          startBotFilling(tournamentId);
         
          lobby.botsAdded = true;
@@ -618,7 +613,9 @@ function createMatches(tournamentId) {
 function startBotGameplay(roomId) {
     const room = rooms[roomId];
     if (!room) return;
-
+    if (!liveCoins[roomId]) {
+        liveCoins[roomId] = {};
+    }
     for (const username in room.users) {
         const player = room.users[username];
 
