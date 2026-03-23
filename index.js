@@ -424,6 +424,15 @@ function startLobbyTimer(tournamentId) {
          clearInterval(lobby.lobbyInterval);
          lobby.lobbyInterval = null;
      }*/
+         if (lobby.lobbyInterval) {
+            clearInterval(lobby.lobbyInterval);
+            lobby.lobbyInterval = null;
+        }
+    
+        if (lobby.botInterval) {
+            clearInterval(lobby.botInterval);
+            lobby.botInterval = null;
+        }
          startBotFilling(tournamentId);
         
          lobby.botsAdded = true;
@@ -472,7 +481,7 @@ function startBotFilling(tournamentId) {
         }
 
         // ⭐ MAX players limit (5)
-        if (totalPlayers >= 6) {
+        if (totalPlayers >= 5) {
             clearInterval(lobby.botInterval);
             lobby.botInterval = null;
             return;
@@ -1001,6 +1010,16 @@ function resetTournament(tournamentId) {
     const lobby = lobbies[tournamentId];
     if (!lobby) return;
 
+    if (lobby.lobbyInterval) {
+        clearInterval(lobby.lobbyInterval);
+        lobby.lobbyInterval = null;
+    }
+
+    // ⭐ CLEAR BOT TIMER (IMPORTANT)
+    if (lobby.botInterval) {
+        clearInterval(lobby.botInterval);
+        lobby.botInterval = null;
+    }
     // RESET states
     lobby.users = {};
     lobby.waitingUsers = {};
@@ -1088,13 +1107,24 @@ function removeUserEverywhere(username, socketId) {
         if (lobby.gameStarted) continue;
 
         // ⭐ Reset lobby only if before start and empty
-        if (!lobby.gameStarted && totalPlayers === 0) {
-            if (lobby.lobbyInterval) clearInterval(lobby.lobbyInterval);
+       if (!lobby.gameStarted && totalPlayers === 0) {
+
+            if (lobby.lobbyInterval) {
+                clearInterval(lobby.lobbyInterval);
+                lobby.lobbyInterval = null;
+            }
+
+            if (lobby.botInterval) {
+                clearInterval(lobby.botInterval);
+                lobby.botInterval = null;
+            }
+
             lobbies[tId] = {
                 users: {},
                 waitingUsers: {},
                 lobbyTime: LOBBY_TIME,
                 lobbyInterval: null,
+                botInterval: null, // ⭐ ADD THIS
                 gameStarted: false,
                 currentRoomId: null,
                 roundProcessed: {},
