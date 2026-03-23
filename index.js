@@ -21,16 +21,16 @@ const liveCoins = {};
 const restarting = {};
 
 const BOT_POOL = [
-    { username: "Rohit_BOT", avatar: "avatar1" },
-    { username: "Priya_BOT", avatar: "avatar2" },
-    { username: "Amit_BOT", avatar: "avatar3" },
-    { username: "Neha_BOT", avatar: "avatar4" },
-    { username: "Raj_BOT", avatar: "avatar5" },
-    { username: "Simran_BOT", avatar: "avatar6" },
-    { username: "Vikram_BOT", avatar: "avatar7" },
-    { username: "Kiran_BOT", avatar: "avatar8" },
-    { username: "Anjali_BOT", avatar: "avatar9" },
-    { username: "Arjun_BOT", avatar: "avatar10" }
+    { username: "Rohit_BOT", avatar: "avatar_01" },
+    { username: "Priya_BOT", avatar: "avatar_02" },
+    { username: "Amit_BOT", avatar: "avatar_03" },
+    { username: "Neha_BOT", avatar: "avatar_04" },
+    { username: "Raj_BOT", avatar: "avatar_05" },
+    { username: "Simran_BOT", avatar: "avatar_06" },
+    { username: "Vikram_BOT", avatar: "avatar_07" },
+    { username: "Kiran_BOT", avatar: "avatar_08" },
+    { username: "Anjali_BOT", avatar: "avatar_09" },
+    { username: "Arjun_BOT", avatar: "avatar_10" }
 ];
 
 
@@ -582,7 +582,7 @@ function startBotGameplay(roomId) {
                     coins
                 });
 
-            }, 2000);
+            }, 20000);
 
             setTimeout(() => clearInterval(interval), TOURNAMENT_TIME * 1000);
         }
