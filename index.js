@@ -33,6 +33,7 @@ const BOT_POOL = [
     { username: "Arjun_BOT", avatar: "avatar_10" }
 ];
 
+const botGameIntervals = {};
 
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
@@ -621,9 +622,15 @@ function createMatches(tournamentId) {
 function startBotGameplay(roomId) {
     const room = rooms[roomId];
     if (!room) return;
+
     if (!liveCoins[roomId]) {
         liveCoins[roomId] = {};
     }
+
+    if (!botGameIntervals[roomId]) {
+        botGameIntervals[roomId] = [];
+    }
+
     for (const username in room.users) {
         const player = room.users[username];
 
@@ -631,6 +638,13 @@ function startBotGameplay(roomId) {
             let coins = 0;
 
             const interval = setInterval(() => {
+
+                // ⭐ SAFETY CHECK
+                if (!rooms[roomId] || !liveCoins[roomId]) {
+                    clearInterval(interval);
+                    return;
+                }
+
                 coins += (Math.random() < 0.5 ? 100 : 200);
 
                 liveCoins[roomId][username] = coins;
@@ -641,6 +655,8 @@ function startBotGameplay(roomId) {
                 });
 
             }, 20000);
+
+            botGameIntervals[roomId].push(interval);
 
             setTimeout(() => clearInterval(interval), TOURNAMENT_TIME * 1000);
         }
@@ -1031,7 +1047,13 @@ function resetTournament(tournamentId) {
         clearInterval(lobby.lobbyInterval);
         lobby.lobbyInterval = null;
     }
-
+        // ⭐ STOP BOT GAMEPLAY INTERVALS
+        for (const roomId in botGameIntervals) {
+            if (roomId.startsWith(tournamentId)) {
+                botGameIntervals[roomId].forEach(i => clearInterval(i));
+                delete botGameIntervals[roomId];
+            }
+        }
     // ⭐ CLEAR BOT TIMER (IMPORTANT)
     if (lobby.botInterval) {
         clearInterval(lobby.botInterval);
