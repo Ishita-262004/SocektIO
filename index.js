@@ -549,7 +549,15 @@ io.to(tournamentId).emit("USER_LIST", lobby.users);
 function createMatches(tournamentId) {
     const lobby = lobbies[tournamentId];
     if (!lobby) return;
-   
+    const realPlayers = countRealUsersInLobby(lobby);
+
+    // ⭐ ONLY BOTS → DELETE TOURNAMENT
+    if (realPlayers === 0) {
+        console.log("Only bots in tournament → deleting", tournamentId);
+        resetTournament(tournamentId);
+        delete lobbies[tournamentId];
+        return;
+    }
     lobby.gameStarted = true;
 
     const usernames = Object.keys(lobby.users);
@@ -663,6 +671,16 @@ function startResultTimer(tournamentId, roomId) {
 
         if (resultTime < 0) {
             clearInterval(interval);
+             const realRoomUsers = countRealUsersInRooms(tournamentId);
+
+            // ⭐ ONLY BOTS → STOP RESTART
+            if (realRoomUsers === 0) {
+                console.log("Only bots after result → deleting tournament", tournamentId);
+
+                resetTournament(tournamentId);
+                delete lobbies[tournamentId];
+                return;
+            }
             lobbies[tournamentId].resultTimeRunning = false;
 
             // ⭐ SEND WINNERS RANK TO ALL PLAYERS
@@ -1157,23 +1175,11 @@ function removeUserEverywhere(username, socketId) {
     
         // ⭐ ONLY BOT LEFT → DELETE TOURNAMENT
         if (realLobbyUsers === 0 && realRoomUsers === 0) {
-    
-            console.log("Tournament deleted (only bots left):", tId);
-    
-            // stop timer
-            if (tournamentTimers[tId])
-                clearInterval(tournamentTimers[tId]);
-    
-            // delete rooms
-            for (const roomId in rooms) {
-                if (roomId.startsWith(tId)) {
-                    delete rooms[roomId];
-                    delete liveCoins[roomId];
-                    delete roomResults[roomId];
-                }
-            }
-           
+
+            console.log("FULL CLEANUP:", tId);
+        
             resetTournament(tId);
+        
             delete lobbies[tId];
             delete tournamentTimers[tId];
             delete tournamentState[tId];
