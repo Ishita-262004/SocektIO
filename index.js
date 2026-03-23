@@ -424,10 +424,8 @@ function startLobbyTimer(tournamentId) {
          clearInterval(lobby.lobbyInterval);
          lobby.lobbyInterval = null;
      }*/
-         const realPlayers = Object.keys(lobby.users).length;
-         const botCount = Math.max(0, 5 - realPlayers);
-     
-         addBotsToLobby(tournamentId, botCount);
+         startBotFilling(tournamentId);
+        
          lobby.botsAdded = true;
 
      io.to(tournamentId).emit("USER_LIST", {
@@ -443,11 +441,55 @@ function startLobbyTimer(tournamentId) {
         if (lobby.lobbyTime <= 0) {
             clearInterval(lobby.lobbyInterval);
             lobby.lobbyInterval = null;
+            if (lobby.botInterval) {
+                clearInterval(lobby.botInterval);
+                lobby.botInterval = null;
+            }
             createMatches(tournamentId);
         }
     }, 1000);
 }
+function startBotFilling(tournamentId) {
+    const lobby = lobbies[tournamentId];
+    if (!lobby) return;
 
+    // prevent multiple intervals
+    if (lobby.botInterval) return;
+
+    lobby.botInterval = setInterval(() => {
+
+        const realPlayers = countRealUsersInLobby(lobby);
+        const totalPlayers = Object.keys(lobby.users).length;
+
+        console.log("REAL:", realPlayers, "TOTAL:", totalPlayers);
+
+        // ⭐ STOP if enough real players
+        if (realPlayers >= 5) {
+            console.log("Enough real players → stop bots");
+            clearInterval(lobby.botInterval);
+            lobby.botInterval = null;
+            return;
+        }
+
+        // ⭐ MAX players limit (5)
+        if (totalPlayers >= 6) {
+            clearInterval(lobby.botInterval);
+            lobby.botInterval = null;
+            return;
+        }
+
+        // ⭐ ADD ONLY 1 BOT at a time
+        addBotsToLobby(tournamentId, 1);
+
+        io.to(tournamentId).emit("USER_LIST", {
+            ...lobby.users,
+            ...lobby.waitingUsers
+        });
+
+        console.log("Added 1 bot");
+
+    }, 5000); // ⏱ every 5 seconds
+}
 /*//const PLAYERS_PER_MATCH = 1;
 
 function createMatches(tournamentId) {
