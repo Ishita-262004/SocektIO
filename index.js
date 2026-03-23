@@ -243,14 +243,14 @@ io.on("connection", (socket) => {
 
         const activeUsers = Object.keys(rooms[roomId]?.users || {});
 
-       // activeUsers.forEach(username => {
-         //   const player = rooms[roomId].users[username];
+        activeUsers.forEach(username => {
+            const player = rooms[roomId].users[username];
         
-          //  if (player.isBot && !roomResults[roomId][username]) {
-             //   const botScore = Math.floor(Math.random() * 5000 + 1000);
-            //    roomResults[roomId][username] = botScore;
-         //   }
-      //  });
+            if (player.isBot && !roomResults[roomId][username]) {
+                const botScore = Math.floor(Math.random() * 5000 + 1000);
+                roomResults[roomId][username] = botScore;
+            }
+        });
 
         const expected = activeUsers.length;
         const received = Object.keys(roomResults[roomId]).filter(u => activeUsers.includes(u)).length;
