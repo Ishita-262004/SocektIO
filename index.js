@@ -244,11 +244,11 @@ io.on("connection", (socket) => {
         const activeUsers = Object.keys(rooms[roomId]?.users || {});
 
         activeUsers.forEach(username => {
-            const player = rooms[roomId].users[username];
+            if (!roomResults[roomId][username]) {
         
-            if (player.isBot && !roomResults[roomId][username]) {
-                const botScore = Math.floor(Math.random() * 5000 + 1000);
-                roomResults[roomId][username] = botScore;
+                // ⭐ FINAL SCORE = LAST LIVE COINS
+                roomResults[roomId][username] =
+                    liveCoins[roomId]?.[username] || 0;
             }
         });
 
@@ -573,7 +573,7 @@ function startBotGameplay(roomId) {
             let coins = 0;
 
             const interval = setInterval(() => {
-                coins += Math.floor(Math.random() * 200);
+                coins += Math.floor(Math.random() * 400);
 
                 liveCoins[roomId][username] = coins;
 
@@ -888,8 +888,28 @@ function startTournamentTimer(tournamentId) {
         // End tournament safely
         if (tournamentTime <= 0) {
             console.log("TOURNAMENT FINISHED:", tournamentId);
+        
             clearInterval(tournamentTimers[tournamentId]);
             delete tournamentTimers[tournamentId];
+        
+            const roomId = lobbies[tournamentId].currentRoomId;
+            const room = rooms[roomId];
+        
+            if (!room) return;
+        
+            if (!roomResults[roomId]) roomResults[roomId] = {};
+        
+            // ⭐ FINAL SCORE = LAST LIVE COINS (PLAYER + BOT BOTH)
+            for (const username in room.users) {
+                roomResults[roomId][username] =
+                    liveCoins[roomId]?.[username] || 0;
+            }
+        
+            console.log("FINAL RESULT:", roomResults[roomId]);
+        
+            io.to(roomId).emit("TOURNAMENT_RESULT", roomResults[roomId]);
+        
+            startResultTimer(tournamentId, roomId);
         }
 
     }, 1000);
