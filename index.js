@@ -710,11 +710,17 @@ function startTournamentAgain(tournamentId, roomId) {
     for (const username in lobby.waitingUsers) {
         const user = lobby.waitingUsers[username];
 
-        const s = io.sockets.sockets.get(user.socketId);
-        if (!s) continue;
+       // const s = io.sockets.sockets.get(user.socketId);
+        //if (!s) continue;
 
-        s.join(roomId);
-
+        //s.join(roomId);
+        if (!user.isBot) {
+            const s = io.sockets.sockets.get(user.socketId);
+            if (s) {
+                s.join(roomId);
+            }
+        }
+        
         rooms[roomId].users[username] = {
             username: user.username,
             avatar: user.avatar,
