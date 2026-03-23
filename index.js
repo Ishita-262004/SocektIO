@@ -251,7 +251,7 @@ io.on("connection", (socket) => {
                 roomResults[roomId][username] = botScore;
             }
         });
-        
+
         const expected = activeUsers.length;
         const received = Object.keys(roomResults[roomId]).filter(u => activeUsers.includes(u)).length;
 
@@ -428,7 +428,12 @@ function startLobbyTimer(tournamentId) {
          const botCount = Math.max(0, 5 - realPlayers);
      
          addBotsToLobby(tournamentId, botCount);
-     
+         lobby.botsAdded = true;
+
+     io.to(tournamentId).emit("USER_LIST", {
+    ...lobby.users,
+    ...lobby.waitingUsers
+});
     lobby.lobbyTime = LOBBY_TIME;
     lobby.lobbyInterval = setInterval(() => {
         lobby.lobbyTime--;
@@ -518,7 +523,13 @@ function createMatches(tournamentId) {
      //  const s = io.sockets.sockets.get(user.socketId);
       //  if (!s) return;
 
-        s.join(roomId);
+      //  s.join(roomId);
+      if (!user.isBot) {
+        const s = io.sockets.sockets.get(user.socketId);
+        if (s) {
+            s.join(roomId);
+        }
+    }
 
         rooms[roomId].users[username] = {
             username: user.username,
@@ -528,10 +539,6 @@ function createMatches(tournamentId) {
         };
     });
 
-    if (!user.isBot) {
-        const s = io.sockets.sockets.get(user.socketId);
-        if (s) s.join(roomId);
-    }
     // ⭐ SEND ROOM USERS
     io.to(roomId).emit("ROOM_USERS", {
         users: rooms[roomId].users
