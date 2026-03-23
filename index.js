@@ -419,11 +419,14 @@ const LOBBY_TIME = 40;
 
 function startLobbyTimer(tournamentId) {
     const lobby = lobbies[tournamentId];
-    if (lobby.lobbyInterval) return;
     /* if (lobby.lobbyInterval !== null) {
          clearInterval(lobby.lobbyInterval);
          lobby.lobbyInterval = null;
      }*/
+         console.log("TOURNAMENT:", tournamentId);
+         console.log("LOBBY EXISTS:", !!lobbies[tournamentId]);
+         console.log("LOBBY TIMER:", lobby?.lobbyInterval);
+         console.log("BOT TIMER:", lobby?.botInterval);
          if (lobby.lobbyInterval) {
             clearInterval(lobby.lobbyInterval);
             lobby.lobbyInterval = null;
@@ -461,7 +464,6 @@ function startLobbyTimer(tournamentId) {
 function startBotFilling(tournamentId) {
     const lobby = lobbies[tournamentId];
     if (!lobby) return;
-
     // prevent multiple intervals
     if (lobby.botInterval) return;
 
@@ -1173,7 +1175,8 @@ function removeUserEverywhere(username, socketId) {
                     delete roomResults[roomId];
                 }
             }
-    
+           
+            resetTournament(tId);
             delete lobbies[tId];
             delete tournamentTimers[tId];
             delete tournamentState[tId];
