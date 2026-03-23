@@ -573,7 +573,7 @@ function startBotGameplay(roomId) {
             let coins = 0;
 
             const interval = setInterval(() => {
-                coins += Math.floor(Math.random() * 400);
+                coins += Math.floor(Math.random() * 201) + 100;
 
                 liveCoins[roomId][username] = coins;
 
@@ -720,7 +720,7 @@ function startTournamentAgain(tournamentId, roomId) {
                 s.join(roomId);
             }
         }
-        
+
         rooms[roomId].users[username] = {
             username: user.username,
             avatar: user.avatar,
@@ -767,6 +767,8 @@ function startTournamentAgain(tournamentId, roomId) {
                 coins: 0
             });
         }
+
+        startBotGameplay(roomId);
 
     }, 2000);
 }
