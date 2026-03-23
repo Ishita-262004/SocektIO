@@ -20,6 +20,19 @@ const roomResults = {};
 const liveCoins = {};
 const restarting = {};
 
+const BOT_POOL = [
+    { username: "Rohit_AI", avatar: "avatar1" },
+    { username: "Priya_AI", avatar: "avatar2" },
+    { username: "Amit_AI", avatar: "avatar3" },
+    { username: "Neha_AI", avatar: "avatar4" },
+    { username: "Raj_AI", avatar: "avatar5" },
+    { username: "Simran_AI", avatar: "avatar6" },
+    { username: "Vikram_AI", avatar: "avatar7" },
+    { username: "Kiran_AI", avatar: "avatar8" },
+    { username: "Anjali_AI", avatar: "avatar9" },
+    { username: "Arjun_AI", avatar: "avatar10" }
+];
+
 
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
@@ -229,6 +242,16 @@ io.on("connection", (socket) => {
         console.log("RESULT RECEIVED:", username, coins);
 
         const activeUsers = Object.keys(rooms[roomId]?.users || {});
+
+        activeUsers.forEach(username => {
+            const player = rooms[roomId].users[username];
+        
+            if (player.isBot && !roomResults[roomId][username]) {
+                const botScore = Math.floor(Math.random() * 5000 + 1000);
+                roomResults[roomId][username] = botScore;
+            }
+        });
+        
         const expected = activeUsers.length;
         const received = Object.keys(roomResults[roomId]).filter(u => activeUsers.includes(u)).length;
 
@@ -372,6 +395,26 @@ io.on("connection", (socket) => {
     });*/
 });
 
+function addBotsToLobby(tournamentId, count = 5) {
+    const lobby = lobbies[tournamentId];
+    if (!lobby) return;
+
+    const shuffled = BOT_POOL.sort(() => 0.5 - Math.random());
+    const selectedBots = shuffled.slice(0, count);
+
+    selectedBots.forEach(bot => {
+        if (lobby.users[bot.username]) return;
+
+        lobby.users[bot.username] = {
+            username: bot.username,
+            avatar: bot.avatar,
+            socketId: null,
+            isBot: true
+        };
+    });
+
+    console.log("Bots added:", selectedBots.map(b => b.username));
+}
 const LOBBY_TIME = 40;
 
 function startLobbyTimer(tournamentId) {
@@ -381,7 +424,11 @@ function startLobbyTimer(tournamentId) {
          clearInterval(lobby.lobbyInterval);
          lobby.lobbyInterval = null;
      }*/
-
+         const realPlayers = Object.keys(lobby.users).length;
+         const botCount = Math.max(0, 5 - realPlayers);
+     
+         addBotsToLobby(tournamentId, botCount);
+     
     lobby.lobbyTime = LOBBY_TIME;
     lobby.lobbyInterval = setInterval(() => {
         lobby.lobbyTime--;
@@ -468,18 +515,23 @@ function createMatches(tournamentId) {
     // ⭐ Move ALL players into SAME ROOM
     usernames.forEach(username => {
         const user = lobby.users[username];
-        const s = io.sockets.sockets.get(user.socketId);
-        if (!s) return;
+     //  const s = io.sockets.sockets.get(user.socketId);
+      //  if (!s) return;
 
         s.join(roomId);
 
         rooms[roomId].users[username] = {
             username: user.username,
             avatar: user.avatar,
-            socketId: user.socketId
+            socketId: user.socketId,
+            isBot: user.isBot || false
         };
     });
 
+    if (!user.isBot) {
+        const s = io.sockets.sockets.get(user.socketId);
+        if (s) s.join(roomId);
+    }
     // ⭐ SEND ROOM USERS
     io.to(roomId).emit("ROOM_USERS", {
         users: rooms[roomId].users
@@ -499,10 +551,36 @@ function createMatches(tournamentId) {
 
     // ⭐ Clear lobby players (but after MATCH_FOUND)
     //  lobby.users = {};
-
     startTournamentTimer(tournamentId);
-}
+    startBotGameplay(roomId);
 
+}
+function startBotGameplay(roomId) {
+    const room = rooms[roomId];
+    if (!room) return;
+
+    for (const username in room.users) {
+        const player = room.users[username];
+
+        if (player.isBot) {
+            let coins = 0;
+
+            const interval = setInterval(() => {
+                coins += Math.floor(Math.random() * 200);
+
+                liveCoins[roomId][username] = coins;
+
+                io.to(roomId).emit("TOURNAMENT_COIN_UPDATE", {
+                    username,
+                    coins
+                });
+
+            }, 2000);
+
+            setTimeout(() => clearInterval(interval), TOURNAMENT_TIME * 1000);
+        }
+    }
+}
 function startResultTimer(tournamentId, roomId) {
     if (tournamentTimers[tournamentId]) {
         clearInterval(tournamentTimers[tournamentId]);
