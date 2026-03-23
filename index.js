@@ -960,7 +960,33 @@ function resetTournament(tournamentId) {
     console.log("Tournament fully reset:", tournamentId);
 }
 
+function countRealUsersInLobby(lobby) {
+    let count = 0;
 
+    for (const u in lobby.users) {
+        if (!lobby.users[u].isBot) count++;
+    }
+
+    for (const u in lobby.waitingUsers) {
+        if (!lobby.waitingUsers[u].isBot) count++;
+    }
+
+    return count;
+}
+
+function countRealUsersInRooms(tournamentId) {
+    let count = 0;
+
+    for (const roomId in rooms) {
+        if (roomId.startsWith(tournamentId)) {
+            for (const u in rooms[roomId].users) {
+                if (!rooms[roomId].users[u].isBot) count++;
+            }
+        }
+    }
+
+    return count;
+}
 function removeUserEverywhere(username, socketId) {
 
     // Find username if missing
@@ -1026,29 +1052,19 @@ function removeUserEverywhere(username, socketId) {
     // ⭐ AFTER removing user → auto delete empty tournaments
     for (const tId in lobbies) {
         const lobby = lobbies[tId];
-
-        const totalPlayers =
-            Object.keys(lobby.users).length +
-            Object.keys(lobby.waitingUsers).length;
-
-        // Count all room players
-        let roomPlayers = 0;
-        for (const roomId in rooms) {
-            if (roomId.startsWith(tId)) {
-                roomPlayers += Object.keys(rooms[roomId].users).length;
-            }
-        }
-
-        // ⭐ If no user exists anywhere → delete full tournament
-        if (totalPlayers === 0 && roomPlayers === 0) {
-
-            console.log("Tournament deleted because no players:", tId);
-
-           
-            // stop tournament timer
+    
+        const realLobbyUsers = countRealUsersInLobby(lobby);
+        const realRoomUsers = countRealUsersInRooms(tId);
+    
+        // ⭐ ONLY BOT LEFT → DELETE TOURNAMENT
+        if (realLobbyUsers === 0 && realRoomUsers === 0) {
+    
+            console.log("Tournament deleted (only bots left):", tId);
+    
+            // stop timer
             if (tournamentTimers[tId])
                 clearInterval(tournamentTimers[tId]);
-
+    
             // delete rooms
             for (const roomId in rooms) {
                 if (roomId.startsWith(tId)) {
@@ -1057,7 +1073,7 @@ function removeUserEverywhere(username, socketId) {
                     delete roomResults[roomId];
                 }
             }
-
+    
             delete lobbies[tId];
             delete tournamentTimers[tId];
             delete tournamentState[tId];
