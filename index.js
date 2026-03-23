@@ -21,16 +21,16 @@ const liveCoins = {};
 const restarting = {};
 
 const BOT_POOL = [
-    { username: "Rohit_AI", avatar: "avatar1" },
-    { username: "Priya_AI", avatar: "avatar2" },
-    { username: "Amit_AI", avatar: "avatar3" },
-    { username: "Neha_AI", avatar: "avatar4" },
-    { username: "Raj_AI", avatar: "avatar5" },
-    { username: "Simran_AI", avatar: "avatar6" },
-    { username: "Vikram_AI", avatar: "avatar7" },
-    { username: "Kiran_AI", avatar: "avatar8" },
-    { username: "Anjali_AI", avatar: "avatar9" },
-    { username: "Arjun_AI", avatar: "avatar10" }
+    { username: "Rohit_BOT", avatar: "avatar1" },
+    { username: "Priya_BOT", avatar: "avatar2" },
+    { username: "Amit_BOT", avatar: "avatar3" },
+    { username: "Neha_BOT", avatar: "avatar4" },
+    { username: "Raj_BOT", avatar: "avatar5" },
+    { username: "Simran_BOT", avatar: "avatar6" },
+    { username: "Vikram_BOT", avatar: "avatar7" },
+    { username: "Kiran_BOT", avatar: "avatar8" },
+    { username: "Anjali_BOT", avatar: "avatar9" },
+    { username: "Arjun_BOT", avatar: "avatar10" }
 ];
 
 
@@ -243,14 +243,14 @@ io.on("connection", (socket) => {
 
         const activeUsers = Object.keys(rooms[roomId]?.users || {});
 
-        activeUsers.forEach(username => {
-            const player = rooms[roomId].users[username];
+       // activeUsers.forEach(username => {
+         //   const player = rooms[roomId].users[username];
         
-            if (player.isBot && !roomResults[roomId][username]) {
-                const botScore = Math.floor(Math.random() * 5000 + 1000);
-                roomResults[roomId][username] = botScore;
-            }
-        });
+          //  if (player.isBot && !roomResults[roomId][username]) {
+             //   const botScore = Math.floor(Math.random() * 5000 + 1000);
+            //    roomResults[roomId][username] = botScore;
+         //   }
+      //  });
 
         const expected = activeUsers.length;
         const received = Object.keys(roomResults[roomId]).filter(u => activeUsers.includes(u)).length;
