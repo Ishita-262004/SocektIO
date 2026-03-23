@@ -573,7 +573,7 @@ function startBotGameplay(roomId) {
             let coins = 0;
 
             const interval = setInterval(() => {
-                coins += Math.floor(Math.random() * 201) + 100;
+                coins += (Math.random() < 0.5 ? 100 : 200);
 
                 liveCoins[roomId][username] = coins;
 
