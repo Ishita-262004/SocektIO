@@ -336,17 +336,16 @@ io.on("connection", (socket) => {
         //}
         delete lobby.users[username];
     delete lobby.waitingUsers[username];
-    removeUserEverywhere(username, socket.id);
         socket.leave(tournamentId);
 
         const totalPlayers =
             Object.keys(lobby.users).length +
             Object.keys(lobby.waitingUsers).length;
 
-        if (lobby.gameStarted && totalPlayers === 0) {
-            console.log("Last user left lobby while running → RESET");
-            resetTournament(tournamentId);
-        }
+            if (!lobby.gameStarted && totalPlayers === 0) {
+                resetTournament(tournamentId);
+            }
+        
 
         io.to(tournamentId).emit("USER_LIST", {
             ...lobby.users,
@@ -1182,7 +1181,7 @@ function removeUserEverywhere(username, socketId) {
 
     // Remove from rooms
     for (const roomId in rooms) {
-
+        if (!rooms[roomId].users[username]) continue;
         delete rooms[roomId].users[username];
         delete liveCoins?.[roomId]?.[username];
         delete roomResults?.[roomId]?.[username];
