@@ -607,7 +607,7 @@ function createMatches(tournamentId) {
         players: Object.values(rooms[roomId].users)
     });
 
-
+    lobby.users = {};
     io.to(tournamentId).emit("USER_LIST", {
         ...lobby.users,
         ...lobby.waitingUsers
