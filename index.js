@@ -330,6 +330,10 @@ io.on("connection", (socket) => {
         const lobby = lobbies[tournamentId];
         if (!lobby) return;
 
+        if (lobby.waitingUsers[username]) {
+            lobby.waitingUsers[username].left = true;
+        }
+
         if (lobby.gameStarted === false) {
             // lobby NOT started → allow removal
             removeUserEverywhere(username, socket.id);
@@ -794,7 +798,7 @@ function startTournamentAgain(tournamentId, roomId) {
     for (const username in lobby.waitingUsers) {
         const user = lobby.waitingUsers[username];
 
-        
+
        // const s = io.sockets.sockets.get(user.socketId);
         //if (!s) continue;
 
@@ -806,9 +810,17 @@ function startTournamentAgain(tournamentId, roomId) {
             //}
         //}
 
-        const s = io.sockets.sockets.get(user.socketId);
-         if (!s) continue;
+            if (user.left) {
+            delete lobby.waitingUsers[username];
+            continue;
+        }
 
+    // ❌ SKIP if socket not alive
+        const s = io.sockets.sockets.get(user.socketId);
+        if (!s) {
+            delete lobby.waitingUsers[username];
+            continue;
+        }
          s.join(roomId);
 
         rooms[roomId].users[username] = {
