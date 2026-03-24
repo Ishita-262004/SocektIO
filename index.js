@@ -55,6 +55,14 @@ io.on("connection", (socket) => {
         }
 
         const lobby = lobbies[tournamentId];
+
+        if (lobby.leftUsers?.[username]) {
+            console.log(" BLOCKED LEFT USER:", username);
+            socket.emit("BLOCKED_REJOIN", {
+                msg: "You left this tournament. Cannot rejoin."
+            });
+            return;
+        }
         if (lobby.resultTimeRunning === true) {
             socket.emit("LOBBY_CLOSED", {
                 msg: "Tournament result is being calculated. Please wait!"
@@ -64,11 +72,13 @@ io.on("connection", (socket) => {
         // If tournament already started → move new players into waiting list
         if (lobby.gameStarted === true) {
 
-            lobby.waitingUsers[username] = {
-                username,
-                avatar,
-                socketId: socket.id
-            };
+            if (!lobby.leftUsers?.[username]) {
+                lobby.waitingUsers[username] = {
+                    username,
+                    avatar,
+                    socketId: socket.id
+                };
+            }
 
             socket.join(tournamentId);
             // ⭐ SEND WAITING USER IN USER_LIST
