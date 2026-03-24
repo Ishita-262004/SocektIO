@@ -86,6 +86,10 @@ io.on("connection", (socket) => {
             return;
         }
 
+        if (lobby.leftUsers?.[username]) {
+            console.log("Blocked rejoin of left user:", username);
+            return;
+        }
 
         if (lobby.users[username]) {
             lobby.users[username].socketId = socket.id;
@@ -330,6 +334,9 @@ io.on("connection", (socket) => {
         const lobby = lobbies[tournamentId];
         if (!lobby) return;
 
+        if (!lobby.leftUsers) lobby.leftUsers = {};
+        lobby.leftUsers[username] = true;
+    
         if (lobby.gameStarted === true) {
 
             if (lobby.waitingUsers[username]) {
@@ -557,6 +564,7 @@ io.to(tournamentId).emit("USER_LIST", lobby.users);
 function createMatches(tournamentId) {
     const lobby = lobbies[tournamentId];
     if (!lobby) return;
+    
     const realPlayers = countRealUsersInLobby(lobby);
 
     // ⭐ ONLY BOTS → DELETE TOURNAMENT
@@ -568,7 +576,9 @@ function createMatches(tournamentId) {
     }
     lobby.gameStarted = true;
 
-    const usernames = Object.keys(lobby.users);
+    const usernames = Object.keys(lobby.users).filter(
+        u => !lobby.leftUsers?.[u]
+    );
 
     // ⭐ CREATE ONLY ONE ROOM
     const roomId = tournamentId + "_ROOM_1";
@@ -799,6 +809,7 @@ function startTournamentAgain(tournamentId, roomId) {
 
     // Tournament restarts, NOW we add waiting users
     for (const username in lobby.waitingUsers) {
+        if (lobby.leftUsers?.[username]) continue
         const user = lobby.waitingUsers[username];
 
        // const s = io.sockets.sockets.get(user.socketId);
@@ -1049,7 +1060,7 @@ function createMatchesForNewUsers(tournamentId, newUsers) {
 function resetTournament(tournamentId) {
     const lobby = lobbies[tournamentId];
     if (!lobby) return;
-
+    lobby.leftUsers = {};
     if (lobby.lobbyInterval) {
         clearInterval(lobby.lobbyInterval);
         lobby.lobbyInterval = null;
