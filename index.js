@@ -330,10 +330,13 @@ io.on("connection", (socket) => {
         const lobby = lobbies[tournamentId];
         if (!lobby) return;
 
-        if (lobby.gameStarted === false) {
+      //  if (lobby.gameStarted === false) {
             // lobby NOT started → allow removal
-            removeUserEverywhere(username, socket.id);
-        }
+        //    removeUserEverywhere(username, socket.id);
+        //}
+        delete lobby.users[username];
+    delete lobby.waitingUsers[username];
+    removeUserEverywhere(username, socket.id);
         socket.leave(tournamentId);
 
         const totalPlayers =
@@ -370,9 +373,14 @@ io.on("connection", (socket) => {
 
             const lobby = lobbies[tId];
 
-            if (lobby.gameStarted) {
-                console.log("Player disconnected but tournament running → keep player");
-                return;
+           // if (lobby.gameStarted) {
+             //   console.log("Player disconnected but tournament running → keep player");
+               // return;
+            //}
+            for (const u in lobby.waitingUsers) {
+                if (lobby.waitingUsers[u].socketId === socket.id) {
+                    delete lobby.waitingUsers[u];
+                }
             }
         }
 
