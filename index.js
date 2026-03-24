@@ -330,22 +330,20 @@ io.on("connection", (socket) => {
         const lobby = lobbies[tournamentId];
         if (!lobby) return;
 
-      //  if (lobby.gameStarted === false) {
+        if (lobby.gameStarted === false) {
             // lobby NOT started → allow removal
-        //    removeUserEverywhere(username, socket.id);
-        //}
-        delete lobby.users[username];
-    delete lobby.waitingUsers[username];
+            removeUserEverywhere(username, socket.id);
+        }
         socket.leave(tournamentId);
 
         const totalPlayers =
             Object.keys(lobby.users).length +
             Object.keys(lobby.waitingUsers).length;
 
-            if (!lobby.gameStarted && totalPlayers === 0) {
-                resetTournament(tournamentId);
-            }
-        
+        if (lobby.gameStarted && totalPlayers === 0) {
+            console.log("Last user left lobby while running → RESET");
+            resetTournament(tournamentId);
+        }
 
         io.to(tournamentId).emit("USER_LIST", {
             ...lobby.users,
@@ -372,14 +370,9 @@ io.on("connection", (socket) => {
 
             const lobby = lobbies[tId];
 
-           // if (lobby.gameStarted) {
-             //   console.log("Player disconnected but tournament running → keep player");
-               // return;
-            //}
-            for (const u in lobby.waitingUsers) {
-                if (lobby.waitingUsers[u].socketId === socket.id) {
-                    delete lobby.waitingUsers[u];
-                }
+            if (lobby.gameStarted) {
+                console.log("Player disconnected but tournament running → keep player");
+                return;
             }
         }
 
@@ -800,11 +793,7 @@ function startTournamentAgain(tournamentId, roomId) {
     // Tournament restarts, NOW we add waiting users
     for (const username in lobby.waitingUsers) {
         const user = lobby.waitingUsers[username];
-        const s = io.sockets.sockets.get(user.socketId);
-        if (!s) {
-            console.log("Skipping disconnected user:", username);
-            continue; // ❌ skip left user
-        }
+
        // const s = io.sockets.sockets.get(user.socketId);
         //if (!s) continue;
 
