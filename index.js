@@ -55,14 +55,6 @@ io.on("connection", (socket) => {
         }
 
         const lobby = lobbies[tournamentId];
-
-        if (lobby.leftUsers?.[username]) {
-            console.log(" BLOCKED LEFT USER:", username);
-            socket.emit("BLOCKED_REJOIN", {
-                msg: "You left this tournament. Cannot rejoin."
-            });
-            return;
-        }
         if (lobby.resultTimeRunning === true) {
             socket.emit("LOBBY_CLOSED", {
                 msg: "Tournament result is being calculated. Please wait!"
@@ -72,13 +64,11 @@ io.on("connection", (socket) => {
         // If tournament already started → move new players into waiting list
         if (lobby.gameStarted === true) {
 
-            if (!lobby.leftUsers?.[username]) {
-                lobby.waitingUsers[username] = {
-                    username,
-                    avatar,
-                    socketId: socket.id
-                };
-            }
+            lobby.waitingUsers[username] = {
+                username,
+                avatar,
+                socketId: socket.id
+            };
 
             socket.join(tournamentId);
             // ⭐ SEND WAITING USER IN USER_LIST
@@ -96,10 +86,6 @@ io.on("connection", (socket) => {
             return;
         }
 
-        if (lobby.leftUsers?.[username]) {
-            console.log("Blocked rejoin of left user:", username);
-            return;
-        }
 
         if (lobby.users[username]) {
             lobby.users[username].socketId = socket.id;
@@ -343,32 +329,28 @@ io.on("connection", (socket) => {
 
         const lobby = lobbies[tournamentId];
         if (!lobby) return;
-    
-        if (!lobby.leftUsers) lobby.leftUsers = {};
-        lobby.leftUsers[username] = true;
-    
-        const roomId = lobby.currentRoomId;
-    
-        // ✅ REMOVE FROM EVERYWHERE
-        delete lobby.users[username];
-        delete lobby.waitingUsers[username];
-    
-        if (roomId && rooms[roomId]) {
-            delete rooms[roomId].users[username];
+
+        if (lobby.gameStarted === false) {
+            // lobby NOT started → allow removal
+            removeUserEverywhere(username, socket.id);
         }
-    
-        if (liveCoins[roomId]) delete liveCoins[roomId][username];
-        if (roomResults[roomId]) delete roomResults[roomId][username];
-    
         socket.leave(tournamentId);
-    
-        console.log("User FULLY removed:", username);
-    
+
+        const totalPlayers =
+            Object.keys(lobby.users).length +
+            Object.keys(lobby.waitingUsers).length;
+
+        if (lobby.gameStarted && totalPlayers === 0) {
+            console.log("Last user left lobby while running → RESET");
+            resetTournament(tournamentId);
+        }
+
         io.to(tournamentId).emit("USER_LIST", {
             ...lobby.users,
             ...lobby.waitingUsers
         });
     });
+
 
 
     /*socket.on("disconnect", () => {
@@ -381,41 +363,21 @@ io.on("connection", (socket) => {
 
 
     socket.on("disconnect", () => {
+       // console.log("Disconnect detected:", socket.id, "Reason:", reason);
 
-        console.log("Disconnect:", socket.id);
-    
-        let username = null;
-        let tournamentId = null;
-    
-        // find user
+        // DO NOT remove player if tournament running
         for (const tId in lobbies) {
+
             const lobby = lobbies[tId];
-    
-            for (const u in lobby.users) {
-                if (lobby.users[u].socketId === socket.id) {
-                    username = u;
-                    tournamentId = tId;
-                }
-            }
-    
-            for (const u in lobby.waitingUsers) {
-                if (lobby.waitingUsers[u].socketId === socket.id) {
-                    username = u;
-                    tournamentId = tId;
-                }
+
+            if (lobby.gameStarted) {
+                console.log("Player disconnected but tournament running → keep player");
+                return;
             }
         }
-    
-        if (!username || !tournamentId) return;
-    
-        const lobby = lobbies[tournamentId];
-    
-        if (!lobby.leftUsers) lobby.leftUsers = {};
-        lobby.leftUsers[username] = true;
-    
-        console.log("Mark LEFT (disconnect):", username);
-    
-        removeUserEverywhere(username, socket.id);
+
+        removeUserEverywhere(null, socket.id);
+
     });
 
     /*socket.on("disconnect", (reason) => {
@@ -588,7 +550,6 @@ io.to(tournamentId).emit("USER_LIST", lobby.users);
 function createMatches(tournamentId) {
     const lobby = lobbies[tournamentId];
     if (!lobby) return;
-    
     const realPlayers = countRealUsersInLobby(lobby);
 
     // ⭐ ONLY BOTS → DELETE TOURNAMENT
@@ -600,9 +561,7 @@ function createMatches(tournamentId) {
     }
     lobby.gameStarted = true;
 
-    const usernames = Object.keys(lobby.users).filter(
-        u => !lobby.leftUsers?.[u]
-    );
+    const usernames = Object.keys(lobby.users);
 
     // ⭐ CREATE ONLY ONE ROOM
     const roomId = tournamentId + "_ROOM_1";
@@ -826,31 +785,24 @@ function startResultTimer(tournamentId, roomId) {
 function startTournamentAgain(tournamentId, roomId) {
 
     console.log("Restarting tournament in SAME ROOM:", roomId);
+
     hardResetRoom(roomId);
 
     const lobby = lobbies[tournamentId];
 
     // Tournament restarts, NOW we add waiting users
     for (const username in lobby.waitingUsers) {
-        if (lobby.leftUsers?.[username]) {
-            console.log("Skipping LEFT user:", username);
-            continue;
-        }
-    
         const user = lobby.waitingUsers[username];
 
        // const s = io.sockets.sockets.get(user.socketId);
         //if (!s) continue;
 
         //s.join(roomId);
-        const s = io.sockets.sockets.get(user.socketId);
-        if (!user.isBot && !s) {
-            console.log("Skipping disconnected user:", username);
-            continue;
-        }
-    
         if (!user.isBot) {
-            s.join(roomId);
+            const s = io.sockets.sockets.get(user.socketId);
+            if (s) {
+                s.join(roomId);
+            }
         }
 
         rooms[roomId].users[username] = {
@@ -1090,7 +1042,7 @@ function createMatchesForNewUsers(tournamentId, newUsers) {
 function resetTournament(tournamentId) {
     const lobby = lobbies[tournamentId];
     if (!lobby) return;
-    lobby.leftUsers = {};
+
     if (lobby.lobbyInterval) {
         clearInterval(lobby.lobbyInterval);
         lobby.lobbyInterval = null;
