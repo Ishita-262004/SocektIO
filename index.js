@@ -374,9 +374,11 @@ io.on("connection", (socket) => {
 
             const lobby = lobbies[tId];
 
-            if (lobby.gameStarted) {
-                console.log("Player disconnected but tournament running → keep player");
-                return;
+            for (const username in lobby.waitingUsers) {
+                if (lobby.waitingUsers[username].socketId === socket.id) {
+                    console.log("Removing waiting user on disconnect:", username);
+                    delete lobby.waitingUsers[username];
+                }
             }
         }
 
