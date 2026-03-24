@@ -336,7 +336,19 @@ io.on("connection", (socket) => {
 
         if (!lobby.leftUsers) lobby.leftUsers = {};
         lobby.leftUsers[username] = true;
-    
+        const roomId = lobby.currentRoomId;
+
+        if (roomId && rooms[roomId]) {
+            delete rooms[roomId].users[username];
+        }
+        
+        if (liveCoins[roomId]) {
+            delete liveCoins[roomId][username];
+        }
+        
+        if (roomResults[roomId]) {
+            delete roomResults[roomId][username];
+        }
         if (lobby.gameStarted === true) {
 
             if (lobby.waitingUsers[username]) {
@@ -802,7 +814,7 @@ function startResultTimer(tournamentId, roomId) {
 function startTournamentAgain(tournamentId, roomId) {
 
     console.log("Restarting tournament in SAME ROOM:", roomId);
-
+    rooms[roomId].users = {};
     hardResetRoom(roomId);
 
     const lobby = lobbies[tournamentId];
