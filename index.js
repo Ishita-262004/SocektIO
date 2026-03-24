@@ -330,8 +330,15 @@ io.on("connection", (socket) => {
         const lobby = lobbies[tournamentId];
         if (!lobby) return;
 
-        if (lobby.gameStarted === false) {
-            // lobby NOT started → allow removal
+        if (lobby.gameStarted === true) {
+
+            if (lobby.waitingUsers[username]) {
+                delete lobby.waitingUsers[username];
+                console.log("Removed from waiting list:", username);
+            }
+    
+        } else {
+            // ✅ CASE 2: lobby not started → normal remove
             removeUserEverywhere(username, socket.id);
         }
         socket.leave(tournamentId);
