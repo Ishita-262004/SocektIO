@@ -296,6 +296,10 @@ io.on("connection", (socket) => {
         const tournamentId = roomId.split("_ROOM_")[0];
         const lobby = lobbies[tournamentId];
 
+        if (lobby && lobby.waitingUsers[username]) {
+            lobby.waitingUsers[username].left = true;
+        }
+
         if (rooms[roomId] && rooms[roomId].users[username]) {
             delete rooms[roomId].users[username];
         }
@@ -811,18 +815,23 @@ function startTournamentAgain(tournamentId, roomId) {
              //   s.join(roomId);
             //}
         //}
-
-            if (user.left) {
+        if (user.left) {
             delete lobby.waitingUsers[username];
             continue;
         }
-
-    // ❌ SKIP if socket not alive
+    
+        // ❌ अगर socket already dead है → skip
         const s = io.sockets.sockets.get(user.socketId);
         if (!s) {
             delete lobby.waitingUsers[username];
             continue;
         }
+    
+        // ❌ अगर user already room में है → duplicate रोकना
+        if (rooms[roomId].users[username]) {
+            continue;
+        }
+            
          s.join(roomId);
 
         rooms[roomId].users[username] = {
@@ -1141,7 +1150,10 @@ function removeUserEverywhere(username, socketId) {
     if (!username && socketId) {
         for (const tId in lobbies) {
             const lobby = lobbies[tId];
-
+            
+            if (lobby.waitingUsers[username]) {
+                    lobby.waitingUsers[username].left = true;
+                }
             for (const u in lobby.users)
                 if (lobby.users[u].socketId === socketId) username = u;
 
