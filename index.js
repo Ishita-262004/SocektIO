@@ -297,7 +297,7 @@ io.on("connection", (socket) => {
         const lobby = lobbies[tournamentId];
 
         if (lobby && lobby.waitingUsers[username]) {
-            lobby.waitingUsers[username].left = true;
+            delete lobby.waitingUsers[username]; // 🔥 HARD DELETE
         }
 
         if (rooms[roomId] && rooms[roomId].users[username]) {
@@ -335,7 +335,7 @@ io.on("connection", (socket) => {
         if (!lobby) return;
 
         if (lobby.waitingUsers[username]) {
-            lobby.waitingUsers[username].left = true;
+            delete lobby.waitingUsers[username]; // 🔥 HARD DELETE
         }
 
         if (lobby.gameStarted === false) {
@@ -380,8 +380,7 @@ io.on("connection", (socket) => {
 
             for (const username in lobby.waitingUsers) {
                 if (lobby.waitingUsers[username].socketId === socket.id) {
-                    console.log("Removing waiting user on disconnect:", username);
-                    delete lobby.waitingUsers[username];
+                    delete lobby.waitingUsers[username]; // 🔥 DELETE
                 }
             }
         }
@@ -803,44 +802,30 @@ function startTournamentAgain(tournamentId, roomId) {
     // Tournament restarts, NOW we add waiting users
     for (const username in lobby.waitingUsers) {
         const user = lobby.waitingUsers[username];
-
-
-       // const s = io.sockets.sockets.get(user.socketId);
-        //if (!s) continue;
-
-        //s.join(roomId);
-       // if (!user.isBot) {
-         //   const s = io.sockets.sockets.get(user.socketId);
-           // if (s) {
-             //   s.join(roomId);
-            //}
-        //}
-        if (user.left) {
+    
+        // ❌ REMOVE LEFT / INVALID USERS
+        if (!user || user.left) {
             delete lobby.waitingUsers[username];
             continue;
         }
     
-        // ❌ अगर socket already dead है → skip
         const s = io.sockets.sockets.get(user.socketId);
+    
         if (!s) {
             delete lobby.waitingUsers[username];
             continue;
         }
     
-        // ❌ अगर user already room में है → duplicate रोकना
-        if (rooms[roomId].users[username]) {
-            continue;
-        }
-            
-         s.join(roomId);
-
+        if (rooms[roomId].users[username]) continue;
+    
+        s.join(roomId);
+    
         rooms[roomId].users[username] = {
             username: user.username,
             avatar: user.avatar,
             socketId: user.socketId
         };
-
-        // Move user into lobby.users
+    
         lobby.users[username] = user;
     }
 
@@ -1150,18 +1135,22 @@ function removeUserEverywhere(username, socketId) {
     if (!username && socketId) {
         for (const tId in lobbies) {
             const lobby = lobbies[tId];
-            
-            if (lobby.waitingUsers[username]) {
-                    lobby.waitingUsers[username].left = true;
-                }
-            for (const u in lobby.users)
-                if (lobby.users[u].socketId === socketId) username = u;
 
-            for (const u in lobby.waitingUsers)
-                if (lobby.waitingUsers[u].socketId === socketId) username = u;
+            for (const u in lobby.users) {
+                if (lobby.users[u].socketId === socketId) {
+                    username = u;
+                    break;
+                }
+            }
+
+            for (const u in lobby.waitingUsers) {
+                if (lobby.waitingUsers[u].socketId === socketId) {
+                    username = u;
+                    break;
+                }
+            }
         }
     }
-
     if (!username) return;
 
     // Remove from lobbies
