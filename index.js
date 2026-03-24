@@ -798,12 +798,17 @@ function startTournamentAgain(tournamentId, roomId) {
         //if (!s) continue;
 
         //s.join(roomId);
-        if (!user.isBot) {
-            const s = io.sockets.sockets.get(user.socketId);
-            if (s) {
-                s.join(roomId);
-            }
-        }
+       // if (!user.isBot) {
+         //   const s = io.sockets.sockets.get(user.socketId);
+           // if (s) {
+             //   s.join(roomId);
+            //}
+        //}
+
+        const s = io.sockets.sockets.get(user.socketId);
+         if (!s) continue;
+
+         s.join(roomId);
 
         rooms[roomId].users[username] = {
             username: user.username,
