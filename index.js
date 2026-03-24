@@ -800,7 +800,11 @@ function startTournamentAgain(tournamentId, roomId) {
     // Tournament restarts, NOW we add waiting users
     for (const username in lobby.waitingUsers) {
         const user = lobby.waitingUsers[username];
-
+        const s = io.sockets.sockets.get(user.socketId);
+        if (!s) {
+            console.log("Skipping disconnected user:", username);
+            continue; // ❌ skip left user
+        }
        // const s = io.sockets.sockets.get(user.socketId);
         //if (!s) continue;
 
@@ -1181,7 +1185,7 @@ function removeUserEverywhere(username, socketId) {
 
     // Remove from rooms
     for (const roomId in rooms) {
-        if (!rooms[roomId].users[username]) continue;
+
         delete rooms[roomId].users[username];
         delete liveCoins?.[roomId]?.[username];
         delete roomResults?.[roomId]?.[username];
