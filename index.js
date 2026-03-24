@@ -337,10 +337,11 @@ io.on("connection", (socket) => {
         if (lobby.waitingUsers[username]) {
             delete lobby.waitingUsers[username]; // 🔥 HARD DELETE
         }
-        lobby.waitingUsers[username] = {
-            ...lobby.waitingUsers[username],
-            left: true
-        };
+            lobby.waitingUsers[username] = {
+        ...lobby.waitingUsers[username],
+        left: true
+    };
+    
 
         if (lobby.gameStarted === false) {
             // lobby NOT started → allow removal
