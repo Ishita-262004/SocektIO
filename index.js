@@ -337,6 +337,10 @@ io.on("connection", (socket) => {
         if (lobby.waitingUsers[username]) {
             delete lobby.waitingUsers[username]; // 🔥 HARD DELETE
         }
+        lobby.waitingUsers[username] = {
+            ...lobby.waitingUsers[username],
+            left: true
+        };
 
         if (lobby.gameStarted === false) {
             // lobby NOT started → allow removal
@@ -1131,22 +1135,19 @@ function countRealUsersInRooms(tournamentId) {
 }
 function removeUserEverywhere(username, socketId) {
 
-    // Find username if missing
     if (!username && socketId) {
         for (const tId in lobbies) {
             const lobby = lobbies[tId];
-
+    
             for (const u in lobby.users) {
                 if (lobby.users[u].socketId === socketId) {
                     username = u;
-                    break;
                 }
             }
-
+    
             for (const u in lobby.waitingUsers) {
                 if (lobby.waitingUsers[u].socketId === socketId) {
                     username = u;
-                    break;
                 }
             }
         }
