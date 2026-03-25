@@ -330,9 +330,19 @@ io.on("connection", (socket) => {
         const lobby = lobbies[tournamentId];
         if (!lobby) return;
 
-        if (lobby.gameStarted === false) {
+       // if (lobby.gameStarted === false) {
             // lobby NOT started → allow removal
-            removeUserEverywhere(username, socket.id);
+         //   removeUserEverywhere(username, socket.id);
+        //}
+        if (lobby.waitingUsers[username]) {
+            delete lobby.waitingUsers[username];
+            console.log(username, "removed from waiting list");
+        }
+    
+        // ✅ ALSO remove from users (safety)
+        if (lobby.users[username]) {
+            delete lobby.users[username];
+            console.log(username, "removed from active lobby users");
         }
         socket.leave(tournamentId);
 
@@ -370,9 +380,11 @@ io.on("connection", (socket) => {
 
             const lobby = lobbies[tId];
 
-            if (lobby.gameStarted) {
-                console.log("Player disconnected but tournament running → keep player");
-                return;
+            for (const u in lobby.waitingUsers) {
+                if (lobby.waitingUsers[u].socketId === socket.id) {
+                    console.log("Removing disconnected waiting user:", u);
+                    delete lobby.waitingUsers[u];
+                }
             }
         }
 
@@ -607,7 +619,7 @@ function createMatches(tournamentId) {
         players: Object.values(rooms[roomId].users)
     });
 
-lobby.users = {};
+    lobby.users = {};
     io.to(tournamentId).emit("USER_LIST", {
         ...lobby.users,
         ...lobby.waitingUsers
@@ -798,12 +810,15 @@ function startTournamentAgain(tournamentId, roomId) {
         //if (!s) continue;
 
         //s.join(roomId);
-        if (!user.isBot) {
-            const s = io.sockets.sockets.get(user.socketId);
-            if (s) {
-                s.join(roomId);
-            }
-        }
+        const s = io.sockets.sockets.get(user.socketId);
+
+    // ❌ Skip if user is not connected anymore
+    if (!s) {
+        console.log("Skipping disconnected waiting user:", username);
+        continue;
+    }
+
+    s.join(roomId);
 
         rooms[roomId].users[username] = {
             username: user.username,
