@@ -330,20 +330,20 @@ io.on("connection", (socket) => {
         const lobby = lobbies[tournamentId];
         if (!lobby) return;
 
-       // if (lobby.gameStarted === false) {
-            // lobby NOT started → allow removal
-         //   removeUserEverywhere(username, socket.id);
-        //}
+        if (lobby.gameStarted === false) {
+           //  lobby NOT started → allow removal
+            removeUserEverywhere(username, socket.id);
+        }
         if (lobby.waitingUsers[username]) {
             delete lobby.waitingUsers[username];
             console.log(username, "removed from waiting list");
         }
     
         // ✅ ALSO remove from users (safety)
-        if (lobby.users[username]) {
-            delete lobby.users[username];
-            console.log(username, "removed from active lobby users");
-        }
+      //  if (lobby.users[username]) {
+          //  delete lobby.users[username];
+          //  console.log(username, "removed from active lobby users");
+     //   }
         socket.leave(tournamentId);
 
         const totalPlayers =
